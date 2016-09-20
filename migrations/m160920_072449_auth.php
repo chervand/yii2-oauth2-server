@@ -1,0 +1,94 @@
+<?php
+
+use yii\db\Migration;
+use yii\db\Schema;
+
+/**
+ * Class m160920_072449_auth
+ *
+ * @see https://oauth2.thephpleague.com/access-token-repository-interface/
+ * @see https://oauth2.thephpleague.com/client-repository-interface/
+ * @see https://oauth2.thephpleague.com/refresh-token-repository-interface/
+ * @see https://oauth2.thephpleague.com/scope-repository-interface/
+ * @see https://oauth2.thephpleague.com/auth-code-repository-interface/
+ * @see https://oauth2.thephpleague.com/user-repository-interface/
+ */
+class m160920_072449_auth extends Migration
+{
+    private $_tableOptions = 'CHARACTER SET utf8 COLLATE utf8_unicode_ci ENGINE=InnoDB';
+
+    private static function _tables()
+    {
+        return [
+            '{{%auth__client}}' => [
+                'id' => Schema::TYPE_PK,
+                'identifier' => Schema::TYPE_STRING . ' NOT NULL',
+                'name' => Schema::TYPE_STRING . ' NOT NULL',
+                'redirect_uri' => Schema::TYPE_TEXT,
+                'created_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
+                'updated_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
+                'status' => Schema::TYPE_SMALLINT . ' NOT NULL DEFAULT 1', // Active,
+                'KEY (status)',
+            ],
+            '{{%auth__scope}}' => [
+                'id' => Schema::TYPE_PK,
+                'identifier' => Schema::TYPE_STRING . ' NOT NULL',
+                'name' => Schema::TYPE_STRING . ' NOT NULL',
+            ],
+            '{{%auth__access_token}}' => [
+                'id' => Schema::TYPE_PK,
+                'client_id' => Schema::TYPE_INTEGER . ' NOT NULL',
+                'user_id' => Schema::TYPE_INTEGER,
+                'identifier' => Schema::TYPE_STRING . ' NOT NULL',
+                'type' => Schema::TYPE_SMALLINT . ' NOT NULL DEFAULT 1', // Bearer
+                'mac_key' => Schema::TYPE_STRING,
+                'mac_algorithm' => Schema::TYPE_SMALLINT,
+                'created_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
+                'updated_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
+//                'expired_at' => Schema::TYPE_INTEGER . ' NOT NULL',
+                'status' => Schema::TYPE_SMALLINT . ' NOT NULL DEFAULT 1', // Active,
+                'FOREIGN KEY (client_id) REFERENCES {{%auth__client}} (id) ON DELETE CASCADE ON UPDATE CASCADE',
+//                'FOREIGN KEY (user_id) REFERENCES {{%user}} (id) ON DELETE CASCADE ON UPDATE CASCADE',
+                'KEY (type)',
+                'KEY (status)',
+                'KEY (mac_algorithm)',
+            ],
+            '{{%auth__refresh_token}}' => [
+                'id' => Schema::TYPE_PK,
+            ],
+            '{{%auth__auth_code}}' => [
+                'id' => Schema::TYPE_PK,
+            ],
+//            '{{%auth__user}}',
+        ];
+    }
+
+    public function safeUp()
+    {
+        foreach (static::_tables() as $name => $attributes) {
+            try {
+                $this->createTable($name, $attributes, $this->_tableOptions);
+            } catch (\Exception $e) {
+                echo $e->getMessage(), "\n";
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public function safeDown()
+    {
+        foreach (array_reverse(static::_tables()) as $name => $attributes) {
+            try {
+                $this->dropTable($name);
+            } catch (\Exception $e) {
+                echo "m160920_072449_oauth cannot be reverted.\n";
+                echo $e->getMessage(), "\n";
+                return false;
+            }
+        }
+
+        return true;
+    }
+}

@@ -1,0 +1,40 @@
+{
+  "name": "chervand/yii2-oauth2-server",
+  "description": "Yii2 PHP Framework integration of n integration of [`thephpleague/oauth2-server`](https://github.com/thephpleague/oauth2-server) with `MAC` tokens support.",
+  "license": "MIT",
+  "keywords": [
+    "oauth",
+    "oauth2",
+    "oauth 2",
+    "oauth 2.0",
+    "server",
+    "auth",
+    "authorization",
+    "authorisation",
+    "authentication",
+    "resource",
+    "api",
+    "auth",
+    "protect",
+    "secure",
+    "mac",
+    "hmac"
+  ],
+  "authors": [
+    {
+      "name": "chervand",
+      "email": "chervand@gmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=5.5.9",
+    "yiisoft/yii2": "~2.0.*",
+    "league/oauth2-server": "~5.1.*",
+    "guzzlehttp/guzzle": "~6.2.*"
+  },
+  "autoload": {
+    "psr-4": {
+      "chervand\\yii2\\oauth2\\server\\": "/"
+    }
+  }
+}
