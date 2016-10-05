@@ -28,13 +28,22 @@ Configure the module:
     `modules` = [
         'oauth2' => [
             'class' => \chervand\yii2\oauth2\server\Module::class,
-            'privateKey' => new CryptKey('/var/www/html/ce/private.key'),
-            'publicKey' => 'file:///var/www/html/ce/public.key',
-            'responseType' => new MacTokenResponse(),
+            'privateKey' => __DIR__ . '/../private.key',
+            'publicKey' => __DIR__ . '/../public.key',
+            'userRepository' => \app\components\UserRepository::class,
             'enabledGrantTypes' => [
-                new ClientCredentialsGrant(),
+                new \League\OAuth2\Server\Grant\ImplicitGrant(new \DateInterval('PT1H')),
+                new \League\OAuth2\Server\Grant\ClientCredentialsGrant(),
             ],
         ],
+...
+```
+
+Add the module to application's `bootstrap`:
+
+```php
+...
+'bootstrap' => ['oauth2'],
 ...
 ```
 
@@ -51,8 +60,11 @@ Configure controllers behaviors:
             'authMethods' => [
                 [
                     'class' => HttpMacAuth::class,
-                    'publicKey' => '/path/to/public.key'
-                    // 'publicKey' => \Yii::$app->getModule('v2/oauth2')->publicKey
+                    'publicKey' => $publicKey
+                ],
+                [
+                    'class' => HttpBearerAuth::class,
+                    'publicKey' => $publicKey
                 ],
             ]
         ];

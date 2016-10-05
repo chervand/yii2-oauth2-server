@@ -1,32 +1,59 @@
 <?php
-namespace chervand\yii2\oauth2\server\components\AuthMethod;
+namespace chervand\yii2\oauth2\server\components\AuthMethods;
 
-use chervand\yii2\oauth2\server\components\Exception\OAuthHttpException;
-use chervand\yii2\oauth2\server\Module;
-use League\OAuth2\Server\Exception\OAuthServerException;
-use yii\web\HttpException;
+use chervand\yii2\oauth2\server\components\AuthorizationValidators\BearerTokenValidator;
+use chervand\yii2\oauth2\server\components\Repositories\BearerTokenRepository;
+use League\OAuth2\Server\AuthorizationValidators\AuthorizationValidatorInterface;
+use League\OAuth2\Server\Repositories\AccessTokenRepositoryInterface;
 
-class HttpBearerAuth extends \yii\filters\auth\HttpBearerAuth
+class HttpBearerAuth extends AuthMethod
 {
     /**
-     * @var Module
+     * @var string the HTTP authentication realm
      */
-    public $module;
+    public $realm = 'api';
+
+    private $_authorizationValidator;
+    private $_accessTokenRepository;
 
 
     /**
      * @inheritdoc
      */
-    public function authenticate($user, $request, $response)
+    public function challenge($response)
     {
-        try {
-            $serverRequest = $this->module->getServerRequest();
-            return $this->module->getResourceServer()
-                ->validateAuthenticatedRequest($serverRequest);
-        } catch (OAuthServerException $e) {
-            throw new OAuthHttpException($e);
-        } catch (\Exception $e) {
-            throw new HttpException(500, 'Unable to validate the request.');
+        $response->getHeaders()->set('WWW-Authenticate', "Bearer realm=\"{$this->realm}\"");
+    }
+
+    /**
+     * @return string
+     */
+    protected function getTokenType()
+    {
+        return 'Bearer';
+    }
+
+    /**
+     * @return AuthorizationValidatorInterface
+     */
+    protected function getAuthorizationValidator()
+    {
+        if (!$this->_authorizationValidator instanceof AuthorizationValidatorInterface) {
+            $this->_authorizationValidator = new BearerTokenValidator($this->getAccessTokenRepository());
         }
+
+        return $this->_authorizationValidator;
+    }
+
+    /**
+     * @return AccessTokenRepositoryInterface
+     */
+    protected function getAccessTokenRepository()
+    {
+        if (!$this->_accessTokenRepository instanceof AccessTokenRepositoryInterface) {
+            $this->_accessTokenRepository = new BearerTokenRepository();
+        }
+
+        return $this->_accessTokenRepository;
     }
 }

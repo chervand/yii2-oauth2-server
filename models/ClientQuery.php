@@ -5,10 +5,7 @@ use yii\db\ActiveQuery;
 
 class ClientQuery extends ActiveQuery
 {
-    public function identifier($identifier)
-    {
-        return $this->andWhere(['identifier' => $identifier]);
-    }
+    use EntityQueryTrait;
 
     /**
      * @param $grantType

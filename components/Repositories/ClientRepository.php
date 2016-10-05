@@ -11,11 +11,14 @@ class ClientRepository implements ClientRepositoryInterface
      */
     public function getClientEntity($clientIdentifier, $grantType, $clientSecret = null, $mustValidateSecret = true)
     {
-        $clientEntity = ClientEntity::find()
-            ->identifier($clientIdentifier)
-            ->grant($grantType)
-            ->active()
-            ->one();
+        $clientEntity = ClientEntity::getDb()
+            ->cache(function () use ($clientIdentifier, $grantType) {
+                return ClientEntity::find()
+                    ->grant($grantType)
+                    ->active()
+                    ->identifier($clientIdentifier)
+                    ->one();
+            });
 
         if (
             $mustValidateSecret !== true

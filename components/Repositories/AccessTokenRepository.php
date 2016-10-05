@@ -2,7 +2,6 @@
 namespace chervand\yii2\oauth2\server\components\Repositories;
 
 use chervand\yii2\oauth2\server\components\Entities\AccessTokenEntity;
-use chervand\yii2\oauth2\server\components\ResponseTypes\MacTokenResponse;
 use chervand\yii2\oauth2\server\models\AccessToken;
 use chervand\yii2\oauth2\server\models\Client;
 use League\OAuth2\Server\CryptKey;
@@ -12,27 +11,29 @@ use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Entities\ScopeEntityInterface;
 use League\OAuth2\Server\Exception\OAuthServerException;
 use League\OAuth2\Server\Repositories\AccessTokenRepositoryInterface;
-use League\OAuth2\Server\ResponseTypes\ResponseTypeInterface;
+use yii\base\InvalidConfigException;
 
-class AccessTokenRepository implements AccessTokenRepositoryInterface
+abstract class AccessTokenRepository implements AccessTokenRepositoryInterface
 {
     use CryptTrait;
 
     /**
-     * @var ResponseTypeInterface
+     * @var integer
      */
-    private $_responseType;
+    private $_tokenTypeId;
 
-    public function __construct(
-        ResponseTypeInterface &$responseType = null,
-        CryptKey $privateKey = null,
-        CryptKey $publicKey = null
-    )
+    public function __construct($tokenTypeId, $privateKey = null, $publicKey = null)
     {
-        $this->_responseType = $responseType;
+        if (!in_array($tokenTypeId, [AccessTokenEntity::TYPE_BEARER, AccessTokenEntity::TYPE_MAC])) {
+            throw new InvalidConfigException('Unknown token type.');
+        }
+
+        $this->_tokenTypeId = $tokenTypeId;
+
         if ($privateKey instanceof CryptKey) {
             $this->setPrivateKey($privateKey);
         }
+
         if ($publicKey instanceof CryptKey) {
             $this->setPublicKey($publicKey);
         }
@@ -51,6 +52,7 @@ class AccessTokenRepository implements AccessTokenRepositoryInterface
     {
         $token = new AccessTokenEntity();
         $token->client_id = $clientEntity->id;
+        $token->type = $clientEntity->token_type;
 
         if (!$token->validate()) {
             throw OAuthServerException::serverError('Token creation failed');
@@ -68,14 +70,40 @@ class AccessTokenRepository implements AccessTokenRepositoryInterface
     public function persistNewAccessToken(AccessTokenEntityInterface $accessTokenEntity)
     {
         if ($accessTokenEntity instanceof AccessToken) {
-            if ($this->_responseType instanceof MacTokenResponse) {
+            if ($this->_tokenTypeId === AccessTokenEntity::TYPE_MAC) {
                 $accessTokenEntity->type = AccessToken::TYPE_MAC;
                 $accessTokenEntity->mac_key = $this->encrypt($accessTokenEntity->getIdentifier());
             }
+            $accessTokenEntity->user_id = $accessTokenEntity->getUserIdentifier();
             $accessTokenEntity->save();
         }
 
         return $accessTokenEntity;
+    }
+
+    /**
+     * Check if the access token has been revoked.
+     *
+     * @param string $tokenId
+     * @return bool Return true if this token has been revoked
+     */
+    public function isAccessTokenRevoked($tokenId)
+    {
+        /** @var AccessTokenEntity $token */
+        $token = AccessTokenEntity::find()
+            ->active()
+            ->identifier($tokenId)
+            ->one();
+
+        if (
+            $token instanceof AccessTokenEntity
+            && $token->type !== $this->_tokenTypeId
+        ) {
+            $this->revokeAccessToken($tokenId);
+            return true;
+        }
+
+        return $token instanceof AccessTokenEntity === false;
     }
 
     /**
@@ -95,24 +123,5 @@ class AccessTokenRepository implements AccessTokenRepositoryInterface
         }
 
         return null;
-    }
-
-    /**
-     * Check if the access token has been revoked.
-     *
-     * @param string $tokenId
-     * @return bool Return true if this token has been revoked
-     */
-    public function isAccessTokenRevoked($tokenId)
-    {
-        $token = AccessToken::find()->andWhere([
-            'identifier' => $tokenId,
-        ])->one();
-
-        if ($token instanceof AccessToken) {
-            return $token->status == AccessToken::STATUS_REVOKED;
-        }
-
-        return false;
     }
 }

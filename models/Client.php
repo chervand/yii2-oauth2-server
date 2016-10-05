@@ -13,6 +13,8 @@ use yii\helpers\ArrayHelper;
  * @property string $secret
  * @property string $name
  * @property string $redirect_uri
+ * @property integer $token_type
+ * @property integer $grant_type
  * @property integer $created_at
  * @property integer $updated_at
  * @property integer $status
@@ -21,6 +23,9 @@ class Client extends ActiveRecord
 {
     const STATUS_DISABLED = -1;
     const STATUS_ACTIVE = 1;
+
+    const TOKEN_TYPE_BEARER = AccessToken::TYPE_BEARER;
+    const TOKEN_TYPE_MAC = AccessToken::TYPE_MAC;
 
     const GRANT_TYPE_AUTHORIZATION_CODE = 1;
     const GRANT_TYPE_IMPLICIT = 2;
