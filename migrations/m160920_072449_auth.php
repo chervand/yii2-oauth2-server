@@ -23,11 +23,14 @@ class m160920_072449_auth extends Migration
             '{{%auth__client}}' => [
                 'id' => Schema::TYPE_PK,
                 'identifier' => Schema::TYPE_STRING . ' NOT NULL',
-                'name' => Schema::TYPE_STRING . ' NOT NULL',
-                'redirect_uri' => Schema::TYPE_TEXT,
+                'secret' => Schema::TYPE_STRING . ' NOT NULL',
+                'name' => Schema::TYPE_STRING,
+                'redirect_uri' => Schema::TYPE_STRING,
+                'grant_type' => Schema::TYPE_SMALLINT,
                 'created_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
                 'updated_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
                 'status' => Schema::TYPE_SMALLINT . ' NOT NULL DEFAULT 1', // Active,
+                'KEY (grant_type)',
                 'KEY (status)',
             ],
             '{{%auth__scope}}' => [

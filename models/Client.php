@@ -1,35 +1,31 @@
 <?php
 namespace chervand\yii2\oauth2\server\models;
 
-use League\OAuth2\Server\Entities\ClientEntityInterface;
-use League\OAuth2\Server\Entities\Traits\ClientTrait;
-use League\OAuth2\Server\Entities\Traits\EntityTrait;
-use League\OAuth2\Server\Repositories\ClientRepositoryInterface;
-use yii\db\ActiveQuery;
 use yii\db\ActiveRecord;
-
-/**
- * Class ClientRelations
- * @package chervand\yii2\oauth2\server\models
- */
-trait ClientRelations
-{
-
-}
+use yii\helpers\ArrayHelper;
 
 /**
  * Class Client
  * @package chervand\yii2\oauth2\server\models
  *
  * @property integer $id
+ * @property string $identifier
+ * @property string $secret
+ * @property string $name
+ * @property string $redirect_uri
+ * @property integer $created_at
+ * @property integer $updated_at
+ * @property integer $status
  */
-class Client extends ActiveRecord implements ClientEntityInterface, ClientRepositoryInterface
+class Client extends ActiveRecord
 {
-    use ClientRelations;
-    use EntityTrait;
-    use ClientTrait;
-
+    const STATUS_DISABLED = -1;
     const STATUS_ACTIVE = 1;
+
+    const GRANT_TYPE_AUTHORIZATION_CODE = 1;
+    const GRANT_TYPE_IMPLICIT = 2;
+    const GRANT_TYPE_PASSWORD = 3;
+    const GRANT_TYPE_CLIENT_CREDENTIALS = 4;
 
 
     /**
@@ -49,27 +45,28 @@ class Client extends ActiveRecord implements ClientEntityInterface, ClientReposi
         return new ClientQuery(get_called_class());
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function getClientEntity($clientIdentifier, $grantType, $clientSecret = null, $mustValidateSecret = true)
+    public static function grants()
     {
-        // TODO[d6, 21/09/16]: inner join witch scopes
-        // TODO[d6, 21/09/16]: If the client is confidential (i.e. is capable of securely storing a secret) and $mustValidateSecret === true then the secret must be validated.
-        return static::find()
-            ->andWhere(['identifier' => $clientIdentifier])
-            ->active()->one();
+        return [
+            static::GRANT_TYPE_AUTHORIZATION_CODE => 'authorization_code',
+            static::GRANT_TYPE_IMPLICIT => 'implicit',
+            static::GRANT_TYPE_PASSWORD => 'password',
+            static::GRANT_TYPE_CLIENT_CREDENTIALS => 'client_credentials',
+        ];
     }
-}
 
-/**
- * Class ClientQuery
- * @package chervand\yii2\oauth2\server\models
- */
-class ClientQuery extends ActiveQuery
-{
-    public function active()
+    public static function getGrantTypeId($grantType, $default = null)
     {
-        return $this->andWhere(['status' => Client::STATUS_ACTIVE]);
+        return ArrayHelper::getValue(array_flip(static::grants()), $grantType, $default);
+    }
+
+    public static function secretHash($secret)
+    {
+        return password_hash($secret, PASSWORD_DEFAULT);
+    }
+
+    public static function secretVerify($secret, $hash)
+    {
+        return password_verify($secret, $hash);
     }
 }

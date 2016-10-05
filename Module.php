@@ -5,10 +5,10 @@ use chervand\yii2\oauth2\server\components\AuthorizationServer;
 use chervand\yii2\oauth2\server\components\Psr7\ServerRequest;
 use chervand\yii2\oauth2\server\components\Psr7\ServerResponse;
 use chervand\yii2\oauth2\server\components\Repositories\AccessTokenRepository;
+use chervand\yii2\oauth2\server\components\Repositories\ClientRepository;
 use chervand\yii2\oauth2\server\components\ResourceServer;
 use chervand\yii2\oauth2\server\controllers\AuthorizeController;
 use chervand\yii2\oauth2\server\controllers\TokenController;
-use chervand\yii2\oauth2\server\models\Client;
 use chervand\yii2\oauth2\server\models\Scope;
 use League\OAuth2\Server\CryptKey;
 use League\OAuth2\Server\Grant\GrantTypeInterface;
@@ -119,7 +119,7 @@ class Module extends \yii\base\Module implements BootstrapInterface
      */
     protected function prepareAuthorizationServer()
     {
-        $clientRepository = new Client();
+        $clientRepository = new ClientRepository();
         $accessTokenRepository = new AccessTokenRepository(
             $this->responseType,
             $this->privateKey,

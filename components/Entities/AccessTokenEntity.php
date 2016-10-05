@@ -50,7 +50,7 @@ class AccessTokenEntity extends AccessToken implements AccessTokenEntityInterfac
 
     public function getClient()
     {
-        return new Client();
+        return new ClientEntity();
     }
 
     public function getIdentifier()
