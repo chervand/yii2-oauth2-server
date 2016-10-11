@@ -7,10 +7,8 @@ use Lcobucci\JWT\Builder;
 use Lcobucci\JWT\Signer\Key;
 use Lcobucci\JWT\Signer\Rsa\Sha256;
 use League\OAuth2\Server\CryptKey;
-use League\OAuth2\Server\CryptTrait;
 use League\OAuth2\Server\Entities\AccessTokenEntityInterface;
 use League\OAuth2\Server\Entities\Traits\AccessTokenTrait;
-use League\OAuth2\Server\Entities\Traits\EntityTrait;
 use League\OAuth2\Server\Entities\Traits\TokenEntityTrait;
 
 class AccessTokenEntity extends AccessToken implements AccessTokenEntityInterface
@@ -50,7 +48,7 @@ class AccessTokenEntity extends AccessToken implements AccessTokenEntityInterfac
 
     public function getClient()
     {
-        return new ClientEntity();
+        return new Client();
     }
 
     public function getIdentifier()

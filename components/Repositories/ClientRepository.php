@@ -1,20 +1,34 @@
 <?php
 namespace chervand\yii2\oauth2\server\components\Repositories;
 
-use chervand\yii2\oauth2\server\components\Entities\ClientEntity;
+use chervand\yii2\oauth2\server\models\Client;
 use League\OAuth2\Server\Repositories\ClientRepositoryInterface;
 
 class ClientRepository implements ClientRepositoryInterface
 {
     /**
-     * @inheritdoc
+     * {@inheritdoc}
+     *
+     * @param boolean $mustValidateGrant
      */
-    public function getClientEntity($clientIdentifier, $grantType, $clientSecret = null, $mustValidateSecret = true)
+    public function getClientEntity(
+        $clientIdentifier,
+        $grantType,
+        $clientSecret = null,
+        $mustValidateSecret = true,
+        $mustValidateGrant = true
+    )
     {
-        $clientEntity = ClientEntity::getDb()
-            ->cache(function () use ($clientIdentifier, $grantType) {
-                return ClientEntity::find()
-                    ->grant($grantType)
+        $clientEntity = Client::getDb()
+            ->cache(function () use ($clientIdentifier, $grantType, $mustValidateGrant) {
+
+                $query = Client::find();
+
+                if ($mustValidateGrant === true) {
+                    $query->grant($grantType);
+                }
+
+                return $query
                     ->active()
                     ->identifier($clientIdentifier)
                     ->one();
@@ -23,8 +37,8 @@ class ClientRepository implements ClientRepositoryInterface
         if (
             $mustValidateSecret !== true
             || (
-                $clientEntity instanceof ClientEntity
-                && ClientEntity::secretVerify($clientSecret, $clientEntity->secret)
+                $clientEntity instanceof Client
+                && Client::secretVerify($clientSecret, $clientEntity->secret)
             )
         ) {
             return $clientEntity;

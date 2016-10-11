@@ -2,7 +2,6 @@
 namespace chervand\yii2\oauth2\server;
 
 use chervand\yii2\oauth2\server\components\AuthorizationServer;
-use chervand\yii2\oauth2\server\components\Entities\ClientEntity;
 use chervand\yii2\oauth2\server\components\Psr7\ServerRequest;
 use chervand\yii2\oauth2\server\components\Psr7\ServerResponse;
 use chervand\yii2\oauth2\server\components\Repositories\BearerTokenRepository;
@@ -12,14 +11,18 @@ use chervand\yii2\oauth2\server\components\ResponseTypes\BearerTokenResponse;
 use chervand\yii2\oauth2\server\components\ResponseTypes\MacTokenResponse;
 use chervand\yii2\oauth2\server\controllers\AuthorizeController;
 use chervand\yii2\oauth2\server\controllers\TokenController;
+use chervand\yii2\oauth2\server\models\Client;
 use chervand\yii2\oauth2\server\models\Scope;
 use League\OAuth2\Server\CryptKey;
+use League\OAuth2\Server\Entities\ClientEntityInterface;
+use League\OAuth2\Server\Exception\OAuthServerException;
 use League\OAuth2\Server\Grant\GrantTypeInterface;
 use League\OAuth2\Server\Repositories\AccessTokenRepositoryInterface;
 use League\OAuth2\Server\Repositories\ClientRepositoryInterface;
 use League\OAuth2\Server\Repositories\ScopeRepositoryInterface;
-use League\OAuth2\Server\ResponseTypes\ResponseTypeInterface;
+use League\OAuth2\Server\Repositories\UserRepositoryInterface;
 use yii\base\BootstrapInterface;
+use yii\base\InvalidConfigException;
 use yii\helpers\ArrayHelper;
 use yii\rest\UrlRule;
 use yii\web\GroupUrlRule;
@@ -52,6 +55,10 @@ class Module extends \yii\base\Module implements BootstrapInterface
      */
     public $publicKey;
     /**
+     * @var UserRepositoryInterface
+     */
+    public $userRepository;
+    /**
      * @var GrantTypeInterface[]
      */
     public $enabledGrantTypes = [];
@@ -81,9 +88,9 @@ class Module extends \yii\base\Module implements BootstrapInterface
      */
     private $_scopeRepository;
     /**
-     * @var ResponseTypeInterface
+     * @var ClientEntityInterface|Client
      */
-    private $_responseType;
+    private $_clientEntity;
 
 
     /**
@@ -108,8 +115,18 @@ class Module extends \yii\base\Module implements BootstrapInterface
 
     public function init()
     {
-        if (!$this->publicKey instanceof CryptKey) {
-            $this->publicKey = new CryptKey($this->publicKey);
+        if (is_string($this->userRepository)
+            && class_exists($this->userRepository)
+        ) {
+            $this->userRepository = new $this->userRepository();
+        }
+
+        if (!$this->userRepository instanceof UserRepositoryInterface) {
+            throw new InvalidConfigException('"userRepository" must be an instance of ' . UserRepositoryInterface::class);
+        }
+
+        if (!$this->privateKey instanceof CryptKey) {
+            $this->privateKey = new CryptKey($this->privateKey);
         }
         if (!$this->publicKey instanceof CryptKey) {
             $this->publicKey = new CryptKey($this->publicKey);
@@ -139,7 +156,7 @@ class Module extends \yii\base\Module implements BootstrapInterface
             $this->getScopeRepository(),
             $this->privateKey,
             $this->publicKey,
-            $this->getResponseType()
+            $this->getClientEntity()->getResponseType()
         );
 
         foreach ($this->enabledGrantTypes as $enabledGrantType) {
@@ -152,6 +169,29 @@ class Module extends \yii\base\Module implements BootstrapInterface
         }
 
         return $server;
+    }
+
+    /**
+     * @return Client
+     * @throws OAuthServerException
+     */
+    protected function getClientEntity()
+    {
+        if (!$this->_clientEntity instanceof ClientEntityInterface) {
+            $this->_clientEntity = $this->getClientRepository()
+                ->getClientEntity('client1', null, null, false, false);
+        }
+
+        if ($this->_clientEntity instanceof ClientEntityInterface) {
+            return $this->_clientEntity;
+        }
+
+        throw OAuthServerException::invalidClient();
+    }
+
+    public function setClientEntity(ClientEntityInterface $clientEntity)
+    {
+        $this->_clientEntity = $clientEntity;
     }
 
     public function getClientRepository()
@@ -174,7 +214,7 @@ class Module extends \yii\base\Module implements BootstrapInterface
 
     protected function prepareAccessTokenRepository()
     {
-        switch (get_class($this->getResponseType())) {
+        switch (get_class($this->getClientEntity()->getResponseType())) {
             case MacTokenResponse::class:
                 $class = MacTokenRepository::class;
                 break;
@@ -187,37 +227,6 @@ class Module extends \yii\base\Module implements BootstrapInterface
             $this->privateKey,
             $this->publicKey
         );
-    }
-
-    public function getResponseType()
-    {
-        if (!$this->_responseType instanceof ResponseTypeInterface) {
-            $this->_responseType = $this->prepareResponseType();
-        }
-
-        return $this->_responseType;
-    }
-
-    protected function prepareResponseType()
-    {
-        $client = $this->getClientEntity();
-
-        if (
-            $client instanceof ClientEntity
-            && $client->token_type === ClientEntity::TOKEN_TYPE_MAC
-        ) {
-            return new MacTokenResponse();
-        }
-
-        return new BearerTokenResponse();
-    }
-
-    /**
-     * @return ClientEntity
-     */
-    protected function getClientEntity()
-    {
-        return null;
     }
 
     public function getScopeRepository()
