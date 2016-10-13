@@ -35,11 +35,6 @@ class m160920_072449_auth extends Migration
                 'KEY (grant_type)',
                 'KEY (status)',
             ],
-            '{{%auth__scope}}' => [
-                'id' => Schema::TYPE_PK,
-                'identifier' => Schema::TYPE_STRING . ' NOT NULL',
-                'name' => Schema::TYPE_STRING . ' NOT NULL',
-            ],
             '{{%auth__access_token}}' => [
                 'id' => Schema::TYPE_PK,
                 'client_id' => Schema::TYPE_INTEGER . ' NOT NULL',
@@ -57,6 +52,18 @@ class m160920_072449_auth extends Migration
                 'KEY (type)',
                 'KEY (status)',
                 'KEY (mac_algorithm)',
+            ],
+            '{{%auth__scope}}' => [
+                'id' => Schema::TYPE_PK,
+                'identifier' => Schema::TYPE_STRING . ' NOT NULL',
+                'name' => Schema::TYPE_STRING . ' NOT NULL',
+            ],
+            '{{%auth__access_token_scope}}' => [
+                'access_token_id' => Schema::TYPE_INTEGER . ' NOT NULL',
+                'scope_id' => Schema::TYPE_INTEGER . ' NOT NULL',
+                'PRIMARY KEY (access_toke_id, scope_id)',
+                'FOREIGN KEY (access_token_id) REFERENCES {{%auth__access_token}} (id) ON DELETE CASCADE ON UPDATE CASCADE',
+                'FOREIGN KEY (scope_id) REFERENCES {{%auth__scope}} (id) ON DELETE CASCADE ON UPDATE CASCADE',
             ],
             '{{%auth__refresh_token}}' => [
                 'id' => Schema::TYPE_PK,

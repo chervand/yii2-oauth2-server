@@ -19,6 +19,8 @@ use yii\helpers\ArrayHelper;
  * @property integer $created_at
  * @property integer $updated_at
  * @property integer $status
+ *
+ * @property Scope $grantedScopes
  */
 class AccessToken extends ActiveRecord
 {
@@ -90,4 +92,11 @@ class AccessToken extends ActiveRecord
             ['status', 'in', 'range' => [static::STATUS_REVOKED, static::STATUS_ACTIVE]],
         ];
     }
+
+    public function getGrantedScopes()
+    {
+        return $this->hasMany(Scope::className(), ['id' => 'scope_id'])
+            ->viaTable('{{auth__access_token_scope}}', ['access_token_id' => 'id']);
+    }
+
 }

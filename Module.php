@@ -7,12 +7,12 @@ use chervand\yii2\oauth2\server\components\Psr7\ServerResponse;
 use chervand\yii2\oauth2\server\components\Repositories\BearerTokenRepository;
 use chervand\yii2\oauth2\server\components\Repositories\ClientRepository;
 use chervand\yii2\oauth2\server\components\Repositories\MacTokenRepository;
+use chervand\yii2\oauth2\server\components\Repositories\ScopeRepository;
 use chervand\yii2\oauth2\server\components\ResponseTypes\BearerTokenResponse;
 use chervand\yii2\oauth2\server\components\ResponseTypes\MacTokenResponse;
 use chervand\yii2\oauth2\server\controllers\AuthorizeController;
 use chervand\yii2\oauth2\server\controllers\TokenController;
 use chervand\yii2\oauth2\server\models\Client;
-use chervand\yii2\oauth2\server\models\Scope;
 use League\OAuth2\Server\CryptKey;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Exception\OAuthServerException;
@@ -115,7 +115,24 @@ class Module extends \yii\base\Module implements BootstrapInterface
 
     public function init()
     {
-        if (is_string($this->userRepository)
+        $this->userRepository = $this->prepareUserRepository();
+
+        if (!$this->privateKey instanceof CryptKey) {
+            $this->privateKey = new CryptKey($this->privateKey);
+        }
+        if (!$this->publicKey instanceof CryptKey) {
+            $this->publicKey = new CryptKey($this->publicKey);
+        }
+    }
+
+    protected function prepareUserRepository()
+    {
+        if (!isset($this->userRepository)) {
+            $this->userRepository = \Yii::$app->user->identityClass;
+        }
+
+        if (
+            is_string($this->userRepository)
             && class_exists($this->userRepository)
         ) {
             $this->userRepository = new $this->userRepository();
@@ -125,12 +142,7 @@ class Module extends \yii\base\Module implements BootstrapInterface
             throw new InvalidConfigException('"userRepository" must be an instance of ' . UserRepositoryInterface::class);
         }
 
-        if (!$this->privateKey instanceof CryptKey) {
-            $this->privateKey = new CryptKey($this->privateKey);
-        }
-        if (!$this->publicKey instanceof CryptKey) {
-            $this->publicKey = new CryptKey($this->publicKey);
-        }
+        return $this->userRepository;
     }
 
     /**
@@ -232,7 +244,7 @@ class Module extends \yii\base\Module implements BootstrapInterface
     public function getScopeRepository()
     {
         if (!$this->_scopeRepository instanceof ScopeRepositoryInterface) {
-            $this->_scopeRepository = new Scope();
+            $this->_scopeRepository = new ScopeRepository();
         }
 
         return $this->_scopeRepository;

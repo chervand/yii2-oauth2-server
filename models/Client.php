@@ -89,11 +89,6 @@ class Client extends ActiveRecord implements ClientEntityInterface
         return $this->identifier;
     }
 
-    public function setIdentifier($identifier)
-    {
-        $this->identifier = $identifier;
-    }
-
     public function getName()
     {
         return $this->name;

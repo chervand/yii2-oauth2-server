@@ -1,20 +1,8 @@
 <?php
 namespace chervand\yii2\oauth2\server\models;
 
-use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Entities\ScopeEntityInterface;
-use League\OAuth2\Server\Repositories\ScopeRepositoryInterface;
-use yii\db\ActiveQuery;
 use yii\db\ActiveRecord;
-
-/**
- * Class ScopeRelations
- * @package \models
- */
-trait ScopeRelations
-{
-
-}
 
 /**
  * Class Scope
@@ -23,10 +11,8 @@ trait ScopeRelations
  * @property integer $id
  * @property string $identifier
  */
-class Scope extends ActiveRecord implements ScopeEntityInterface, ScopeRepositoryInterface
+class Scope extends ActiveRecord implements ScopeEntityInterface
 {
-    use ScopeRelations;
-
     /**
      * @inheritdoc
      */
@@ -51,42 +37,7 @@ class Scope extends ActiveRecord implements ScopeEntityInterface, ScopeRepositor
      */
     public function getIdentifier()
     {
-        // TODO: Implement getIdentifier() method.
-    }
-
-    /**
-     * Return information about a scope.
-     *
-     * @param string $identifier The scope identifier
-     *
-     * @return ScopeEntityInterface
-     */
-    public function getScopeEntityByIdentifier($identifier)
-    {
-        // TODO: Implement getScopeEntityByIdentifier() method.
-        return null;
-    }
-
-    /**
-     * Given a client, grant type and optional user identifier validate the set of scopes requested are valid and optionally
-     * append additional scopes or remove requested scopes.
-     *
-     * @param ScopeEntityInterface[] $scopes
-     * @param string $grantType
-     * @param ClientEntityInterface $clientEntity
-     * @param null|string $userIdentifier
-     *
-     * @return ScopeEntityInterface[]
-     */
-    public function finalizeScopes(
-        array $scopes,
-        $grantType,
-        ClientEntityInterface $clientEntity,
-        $userIdentifier = null
-    )
-    {
-        // TODO: Implement finalizeScopes() method.
-        return [];
+        return $this->identifier;
     }
 
     /**
@@ -98,15 +49,6 @@ class Scope extends ActiveRecord implements ScopeEntityInterface, ScopeRepositor
      */
     function jsonSerialize()
     {
-        // TODO: Implement jsonSerialize() method.
+        return $this->getIdentifier();
     }
-}
-
-/**
- * Class ScopeQuery
- * @package \models
- */
-class ScopeQuery extends ActiveQuery
-{
-
 }

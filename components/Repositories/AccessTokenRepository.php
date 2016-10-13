@@ -75,7 +75,13 @@ abstract class AccessTokenRepository implements AccessTokenRepositoryInterface
                 $accessTokenEntity->mac_key = $this->encrypt($accessTokenEntity->getIdentifier());
             }
             $accessTokenEntity->user_id = $accessTokenEntity->getUserIdentifier();
-            $accessTokenEntity->save();
+
+            // TODO[d6, 14/10/16]: transaction
+            if ($accessTokenEntity->save()) {
+                foreach ($accessTokenEntity->getScopes() as $scope) {
+                    $accessTokenEntity->link('grantedScopes', $scope);
+                }
+            }
         }
 
         return $accessTokenEntity;

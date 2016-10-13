@@ -7,9 +7,10 @@ use chervand\yii2\oauth2\server\components\ResourceServer;
 use League\OAuth2\Server\CryptKey;
 use League\OAuth2\Server\Exception\OAuthServerException;
 use League\OAuth2\Server\Repositories\AccessTokenRepositoryInterface;
-use Psr\Http\Message\ServerRequestInterface;
 use yii\web\HttpException;
 use yii\web\Request;
+use yii\web\Response;
+use yii\web\User;
 
 abstract class AuthMethod extends \yii\filters\auth\AuthMethod
 {
@@ -24,7 +25,18 @@ abstract class AuthMethod extends \yii\filters\auth\AuthMethod
             return null;
         }
 
-        return $this->validate(new ServerRequest($request));
+        return $this->validate(
+            new ResourceServer(
+                $this->getAccessTokenRepository(),
+                $this->publicKey,
+                $this->getAuthorizationValidator()
+            ),
+            new ServerRequest(
+                $this->request ?: \Yii::$app->getRequest()
+            ),
+            $this->response ?: \Yii::$app->getResponse(),
+            $this->user ?: \Yii::$app->getUser()
+        );
     }
 
     protected function tokenTypeExists(Request &$request)
@@ -46,21 +58,42 @@ abstract class AuthMethod extends \yii\filters\auth\AuthMethod
      */
     protected abstract function getTokenType();
 
-    protected function validate(ServerRequestInterface $serverRequest)
+    protected function validate(
+        ResourceServer $resourceServer,
+        ServerRequest $serverRequest,
+        Response $response,
+        User $user
+    )
     {
-        $resourceServer = new ResourceServer(
-            $this->getAccessTokenRepository(),
-            $this->publicKey,
-            $this->getAuthorizationValidator()
-        );
-
         try {
-            return $resourceServer->validateAuthenticatedRequest($serverRequest);
+
+            $serverRequest = $resourceServer
+                ->validateAuthenticatedRequest($serverRequest);
+
+            $identity = $user->loginByAccessToken(
+                $serverRequest->getAttribute('oauth_access_token_id'),
+                get_called_class()
+            );
+
+            if (
+                $identity === null
+                || $serverRequest->getAttribute('oauth_user_id') != $identity->getId()
+            ) {
+                $this->handleFailure($response);
+            }
+
+            return $identity;
+
         } catch (OAuthServerException $e) {
             throw new OAuthHttpException($e);
         } catch (\Exception $e) {
             throw new HttpException(500, 'Unable to validate the request.', 0, YII_DEBUG ? $e : null);
         }
+    }
+
+    public function handleFailure($response)
+    {
+        throw OAuthServerException::accessDenied();
     }
 
     /**

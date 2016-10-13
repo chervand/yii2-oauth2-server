@@ -17,9 +17,11 @@ class OAuthHttpException extends HttpException
      */
     public function __construct(OAuthServerException $previous)
     {
+        $hint = $previous->getHint();
+
         parent::__construct(
             $previous->getHttpStatusCode(),
-            $previous->getMessage() . ' ' . $previous->getHint() . '.',
+            $hint ? $previous->getMessage() . ' ' . $hint . '.' : $previous->getMessage(),
             $previous->getCode(),
             YII_DEBUG === true ? $previous : null
         );

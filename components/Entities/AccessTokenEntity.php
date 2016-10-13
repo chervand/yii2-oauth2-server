@@ -40,12 +40,6 @@ class AccessTokenEntity extends AccessToken implements AccessTokenEntityInterfac
             ->getToken();
     }
 
-
-    public function getScopes()
-    {
-        [];
-    }
-
     public function getClient()
     {
         return new Client();
@@ -60,4 +54,15 @@ class AccessTokenEntity extends AccessToken implements AccessTokenEntityInterfac
     {
         $this->identifier = $identifier;
     }
+
+    public function getScopes()
+    {
+        if (empty($this->scopes)) {
+            $this->scopes = $this->grantedScopes;
+        }
+
+        return array_values($this->scopes);
+    }
+
+
 }
