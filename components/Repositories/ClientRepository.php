@@ -22,7 +22,8 @@ class ClientRepository implements ClientRepositoryInterface
         $clientEntity = Client::getDb()
             ->cache(function () use ($clientIdentifier, $grantType, $mustValidateGrant) {
 
-                $query = Client::find();
+                $query = Client::find()
+                    ->innerJoinWith(['permittedScopes']);
 
                 if ($mustValidateGrant === true) {
                     $query->grant($grantType);

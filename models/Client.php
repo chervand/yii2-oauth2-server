@@ -5,6 +5,7 @@ use chervand\yii2\oauth2\server\components\ResponseTypes\BearerTokenResponse;
 use chervand\yii2\oauth2\server\components\ResponseTypes\MacTokenResponse;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\ResponseTypes\ResponseTypeInterface;
+use yii\db\ActiveQuery;
 use yii\db\ActiveRecord;
 use yii\helpers\ArrayHelper;
 
@@ -22,6 +23,8 @@ use yii\helpers\ArrayHelper;
  * @property integer $created_at
  * @property integer $updated_at
  * @property integer $status
+ *
+ * @property Scope[] $permittedScopes
  */
 class Client extends ActiveRecord implements ClientEntityInterface
 {
@@ -115,5 +118,16 @@ class Client extends ActiveRecord implements ClientEntityInterface
         }
 
         return $this->_responseType;
+    }
+
+    /**
+     * Permitted for the client scopes relation.
+     *
+     * @return ClientQuery|ActiveQuery
+     */
+    public function getPermittedScopes()
+    {
+        return $this->hasMany(Scope::className(), ['id' => 'scope_id'])
+            ->viaTable('{{auth__client_scope}}', ['client_id' => 'id']);
     }
 }

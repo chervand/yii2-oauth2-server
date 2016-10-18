@@ -45,10 +45,8 @@ class m160920_072449_auth extends Migration
                 'mac_algorithm' => Schema::TYPE_SMALLINT,
                 'created_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
                 'updated_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
-//                'expired_at' => Schema::TYPE_INTEGER . ' NOT NULL',
                 'status' => Schema::TYPE_SMALLINT . ' NOT NULL DEFAULT 1', // Active,
                 'FOREIGN KEY (client_id) REFERENCES {{%auth__client}} (id) ON DELETE CASCADE ON UPDATE CASCADE',
-//                'FOREIGN KEY (user_id) REFERENCES {{%user}} (id) ON DELETE CASCADE ON UPDATE CASCADE',
                 'KEY (type)',
                 'KEY (status)',
                 'KEY (mac_algorithm)',
@@ -56,12 +54,19 @@ class m160920_072449_auth extends Migration
             '{{%auth__scope}}' => [
                 'id' => Schema::TYPE_PK,
                 'identifier' => Schema::TYPE_STRING . ' NOT NULL',
-                'name' => Schema::TYPE_STRING . ' NOT NULL',
+                'name' => Schema::TYPE_STRING,
+            ],
+            '{{%auth__client_scope}}' => [
+                'client_id' => Schema::TYPE_INTEGER . ' NOT NULL',
+                'scope_id' => Schema::TYPE_INTEGER . ' NOT NULL',
+                'PRIMARY KEY (client_id, scope_id)',
+                'FOREIGN KEY (client_id) REFERENCES {{%auth__client}} (id) ON DELETE CASCADE ON UPDATE CASCADE',
+                'FOREIGN KEY (scope_id) REFERENCES {{%auth__scope}} (id) ON DELETE CASCADE ON UPDATE CASCADE',
             ],
             '{{%auth__access_token_scope}}' => [
                 'access_token_id' => Schema::TYPE_INTEGER . ' NOT NULL',
                 'scope_id' => Schema::TYPE_INTEGER . ' NOT NULL',
-                'PRIMARY KEY (access_toke_id, scope_id)',
+                'PRIMARY KEY (access_token_id, scope_id)',
                 'FOREIGN KEY (access_token_id) REFERENCES {{%auth__access_token}} (id) ON DELETE CASCADE ON UPDATE CASCADE',
                 'FOREIGN KEY (scope_id) REFERENCES {{%auth__scope}} (id) ON DELETE CASCADE ON UPDATE CASCADE',
             ],
@@ -71,7 +76,6 @@ class m160920_072449_auth extends Migration
             '{{%auth__auth_code}}' => [
                 'id' => Schema::TYPE_PK,
             ],
-//            '{{%auth__user}}',
         ];
     }
 

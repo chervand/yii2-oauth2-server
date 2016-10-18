@@ -17,7 +17,9 @@ class ClientQuery extends ActiveQuery
             $grantType = Client::getGrantTypeId($grantType, -999);
         }
 
-        return $this->andWhere(['grant_type' => $grantType]);
+        return $this->andWhere([
+            Client::tableName() . '.`grant_type`' => $grantType
+        ]);
     }
 
     /**
@@ -25,6 +27,8 @@ class ClientQuery extends ActiveQuery
      */
     public function active()
     {
-        return $this->andWhere(['status' => Client::STATUS_ACTIVE]);
+        return $this->andWhere([
+            Client::tableName() . '.`status`' => Client::STATUS_ACTIVE
+        ]);
     }
 }

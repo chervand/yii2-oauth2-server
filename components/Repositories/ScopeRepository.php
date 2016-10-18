@@ -1,6 +1,7 @@
 <?php
 namespace chervand\yii2\oauth2\server\components\Repositories;
 
+use chervand\yii2\oauth2\server\models\Client;
 use chervand\yii2\oauth2\server\models\Scope;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Entities\ScopeEntityInterface;
@@ -19,7 +20,9 @@ class ScopeRepository implements ScopeRepositoryInterface
      */
     public function getScopeEntityByIdentifier($identifier)
     {
-        return Scope::find()->identifier($identifier)->one();
+        return Scope::find()
+            ->identifier($identifier)
+            ->one();
     }
 
     /**
@@ -28,7 +31,7 @@ class ScopeRepository implements ScopeRepositoryInterface
      *
      * @param ScopeEntityInterface[] $scopes
      * @param string $grantType
-     * @param ClientEntityInterface $clientEntity
+     * @param ClientEntityInterface|Client $clientEntity
      * @param null|string $userIdentifier
      *
      * @return ScopeEntityInterface[]
@@ -40,6 +43,17 @@ class ScopeRepository implements ScopeRepositoryInterface
         $userIdentifier = null
     )
     {
-        return $scopes;
+        if (empty($scopes)) {
+            return $clientEntity->permittedScopes;
+        }
+
+        return array_filter($scopes, function (Scope $scope) use ($clientEntity) {
+            foreach ($clientEntity->permittedScopes as $permittedScope) {
+                if ($permittedScope->identifier === $scope->identifier) {
+                    return $scope;
+                }
+            }
+            return null;
+        });
     }
 }
