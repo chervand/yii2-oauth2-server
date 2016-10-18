@@ -23,7 +23,7 @@ class ClientRepository implements ClientRepositoryInterface
             ->cache(function () use ($clientIdentifier, $grantType, $mustValidateGrant) {
 
                 $query = Client::find()
-                    ->innerJoinWith(['permittedScopes']);
+                    ->with(['permittedScopes']);
 
                 if ($mustValidateGrant === true) {
                     $query->grant($grantType);
