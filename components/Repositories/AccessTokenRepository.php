@@ -75,6 +75,8 @@ abstract class AccessTokenRepository implements AccessTokenRepositoryInterface
                 $accessTokenEntity->mac_key = $this->encrypt($accessTokenEntity->getIdentifier());
             }
             $accessTokenEntity->user_id = $accessTokenEntity->getUserIdentifier();
+            $accessTokenEntity->expired_at = $accessTokenEntity->getExpiryDateTime()->getTimestamp();
+
 
             // TODO[d6, 14/10/16]: transaction
             if ($accessTokenEntity->save()) {

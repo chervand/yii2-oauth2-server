@@ -30,6 +30,7 @@ class m160920_072449_auth extends Migration
                 'grant_type' => Schema::TYPE_SMALLINT,
                 'created_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
                 'updated_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
+                'expired_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
                 'status' => Schema::TYPE_SMALLINT . ' NOT NULL DEFAULT 1', // Active,
                 'KEY (token_type)',
                 'KEY (grant_type)',

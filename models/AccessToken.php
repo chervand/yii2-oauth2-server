@@ -18,6 +18,7 @@ use yii\helpers\ArrayHelper;
  * @property integer $type
  * @property integer $created_at
  * @property integer $updated_at
+ * @property integer $expired_at
  * @property integer $status
  *
  * @property Scope $grantedScopes
