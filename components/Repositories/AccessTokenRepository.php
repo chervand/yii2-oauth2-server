@@ -95,11 +95,13 @@ abstract class AccessTokenRepository implements AccessTokenRepositoryInterface
      */
     public function isAccessTokenRevoked($tokenId)
     {
-        /** @var AccessTokenEntity $token */
-        $token = AccessTokenEntity::find()
-            ->active()
-            ->identifier($tokenId)
-            ->one();
+        $token = AccessTokenEntity::getDb()
+            ->cache(function () use ($tokenId) {
+                return AccessTokenEntity::find()
+                    ->active()
+                    ->identifier($tokenId)
+                    ->one();
+            });
 
         if (
             $token instanceof AccessTokenEntity

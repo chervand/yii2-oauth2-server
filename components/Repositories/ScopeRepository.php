@@ -20,9 +20,12 @@ class ScopeRepository implements ScopeRepositoryInterface
      */
     public function getScopeEntityByIdentifier($identifier)
     {
-        return Scope::find()
-            ->identifier($identifier)
-            ->one();
+        return Scope::getDb()
+            ->cache(function () use ($identifier) {
+                return Scope::find()
+                    ->identifier($identifier)
+                    ->one();
+            });
     }
 
     /**
