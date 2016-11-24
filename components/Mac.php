@@ -114,11 +114,11 @@ class Mac
 
         $mac = hash_hmac(
             $this->getAlgorithm(),
-            implode('\n', array_filter($values)),
+            implode('\\n', array_filter($values)) . '\\n',
             $this->getJwt()->getClaim('mac_key')
         );
 
-        if ($mac === $this->mac) {
+        if (base64_encode($mac) === $this->mac) {
             return $this;
         }
 
