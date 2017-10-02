@@ -23,11 +23,11 @@ class m160920_072449_auth extends Migration
             '{{%auth__client}}' => [
                 'id' => Schema::TYPE_PK,
                 'identifier' => Schema::TYPE_STRING . ' NOT NULL',
-                'secret' => Schema::TYPE_STRING . ' NOT NULL',
+                'secret' => Schema::TYPE_STRING, // not confidential if null
                 'name' => Schema::TYPE_STRING . ' NOT NULL',
                 'redirect_uri' => Schema::TYPE_STRING,
                 'token_type' => Schema::TYPE_SMALLINT . ' NOT NULL DEFAULT 1', // Bearer
-                'grant_type' => Schema::TYPE_SMALLINT,
+                'grant_type' => Schema::TYPE_SMALLINT . ' NOT NULL DEFAULT 1', // Authorization Code
                 'created_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
                 'updated_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
                 'status' => Schema::TYPE_SMALLINT . ' NOT NULL DEFAULT 1', // Active,

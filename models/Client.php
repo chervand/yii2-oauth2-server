@@ -130,4 +130,9 @@ class Client extends ActiveRecord implements ClientEntityInterface
         return $this->hasMany(Scope::className(), ['id' => 'scope_id'])
             ->viaTable('{{auth__client_scope}}', ['client_id' => 'id']);
     }
+
+    public function getIsConfidential()
+    {
+        return $this->secret !== null;
+    }
 }

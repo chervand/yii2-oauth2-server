@@ -7,6 +7,17 @@ class ClientQuery extends ActiveQuery
 {
     use EntityQueryTrait;
 
+
+    /**
+     * @return ClientQuery|ActiveQuery
+     */
+    public function confidential()
+    {
+        return $this->andWhere([
+            'not', [Client::tableName() . '.`secret`' => null]
+        ]);
+    }
+
     /**
      * @param $grantType
      * @return ClientQuery|ActiveQuery

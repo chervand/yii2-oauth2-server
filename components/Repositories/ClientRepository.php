@@ -1,4 +1,5 @@
 <?php
+
 namespace chervand\yii2\oauth2\server\components\Repositories;
 
 use chervand\yii2\oauth2\server\models\Client;
@@ -17,8 +18,7 @@ class ClientRepository implements ClientRepositoryInterface
         $clientSecret = null,
         $mustValidateSecret = true,
         $mustValidateGrant = true
-    )
-    {
+    ) {
         $clientEntity = Client::getDb()
             ->cache(function () use ($clientIdentifier, $grantType, $mustValidateGrant) {
 
@@ -36,10 +36,11 @@ class ClientRepository implements ClientRepositoryInterface
             });
 
         if (
-            $mustValidateSecret !== true
-            || (
-                $clientEntity instanceof Client
-                && Client::secretVerify($clientSecret, $clientEntity->secret)
+            $clientEntity instanceof Client
+            && (
+                $clientEntity->getIsConfidential() !== true
+                || $mustValidateSecret !== true
+                || Client::secretVerify($clientSecret, $clientEntity->secret) === true
             )
         ) {
             return $clientEntity;
