@@ -8,7 +8,7 @@ trait EntityQueryTrait
     /**
      * @param $identifier
      * @param string|null $tableName
-     * @return \yii\db\ActiveQuery
+     * @return \yii\db\ActiveQuery|static
      */
     public function identifier($identifier, $tableName = null)
     {

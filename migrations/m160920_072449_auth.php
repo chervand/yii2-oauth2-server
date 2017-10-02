@@ -48,8 +48,8 @@ class m160920_072449_auth extends Migration
                 'status' => Schema::TYPE_SMALLINT . ' NOT NULL DEFAULT 1', // Active,
                 'FOREIGN KEY (client_id) REFERENCES {{%auth__client}} (id) ON DELETE CASCADE ON UPDATE CASCADE',
                 'KEY (type)',
-                'KEY (status)',
                 'KEY (mac_algorithm)',
+                'KEY (status)',
             ],
             '{{%auth__scope}}' => [
                 'id' => Schema::TYPE_PK,
@@ -72,6 +72,13 @@ class m160920_072449_auth extends Migration
             ],
             '{{%auth__refresh_token}}' => [
                 'id' => Schema::TYPE_PK,
+                'access_token_id' => Schema::TYPE_INTEGER . ' NOT NULL',
+                'identifier' => Schema::TYPE_STRING . ' NOT NULL',
+                'created_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
+                'updated_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
+                'status' => Schema::TYPE_SMALLINT . ' NOT NULL DEFAULT 1', // Active,
+                'FOREIGN KEY (access_token_id) REFERENCES {{%auth__access_token}} (id) ON DELETE CASCADE ON UPDATE CASCADE',
+                'KEY (status)',
             ],
             '{{%auth__auth_code}}' => [
                 'id' => Schema::TYPE_PK,
