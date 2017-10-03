@@ -76,6 +76,8 @@ abstract class AccessTokenRepository implements AccessTokenRepositoryInterface
                 $accessTokenEntity->mac_key = $this->encrypt($accessTokenEntity->getIdentifier());
             }
             $accessTokenEntity->user_id = $accessTokenEntity->getUserIdentifier();
+            $accessTokenEntity->expired_at = $accessTokenEntity->getExpiryDateTime()->getTimestamp();
+
 
             // TODO[d6, 14/10/16]: transaction
             if ($accessTokenEntity->save()) {
@@ -98,11 +100,13 @@ abstract class AccessTokenRepository implements AccessTokenRepositoryInterface
      */
     public function isAccessTokenRevoked($tokenId)
     {
-        /** @var AccessToken $token */
-        $token = AccessToken::find()
-            ->active()
-            ->identifier($tokenId)
-            ->one();
+        $token = AccessToken::getDb()
+            ->cache(function () use ($tokenId) {
+                return AccessToken::find()
+                    ->identifier($tokenId)
+                    ->active()
+                    ->one();
+            });
 
         if (
             $token instanceof AccessToken
