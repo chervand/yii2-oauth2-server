@@ -1,9 +1,10 @@
 <?php
+
 namespace chervand\yii2\oauth2\server\components\Repositories;
 
-use chervand\yii2\oauth2\server\components\Entities\AccessTokenEntity;
 use chervand\yii2\oauth2\server\models\AccessToken;
 use chervand\yii2\oauth2\server\models\Client;
+use chervand\yii2\oauth2\server\models\Scope;
 use League\OAuth2\Server\CryptKey;
 use League\OAuth2\Server\CryptTrait;
 use League\OAuth2\Server\Entities\AccessTokenEntityInterface;
@@ -24,7 +25,7 @@ abstract class AccessTokenRepository implements AccessTokenRepositoryInterface
 
     public function __construct($tokenTypeId, $privateKey = null, $publicKey = null)
     {
-        if (!in_array($tokenTypeId, [AccessTokenEntity::TYPE_BEARER, AccessTokenEntity::TYPE_MAC])) {
+        if (!in_array($tokenTypeId, [AccessToken::TYPE_BEARER, AccessToken::TYPE_MAC])) {
             throw new InvalidConfigException('Unknown token type.');
         }
 
@@ -50,7 +51,7 @@ abstract class AccessTokenRepository implements AccessTokenRepositoryInterface
      */
     public function getNewToken(ClientEntityInterface $clientEntity, array $scopes, $userIdentifier = null)
     {
-        $token = new AccessTokenEntity();
+        $token = new AccessToken();
         $token->client_id = $clientEntity->id;
         $token->type = $clientEntity->token_type;
 
@@ -70,7 +71,7 @@ abstract class AccessTokenRepository implements AccessTokenRepositoryInterface
     public function persistNewAccessToken(AccessTokenEntityInterface $accessTokenEntity)
     {
         if ($accessTokenEntity instanceof AccessToken) {
-            if ($this->_tokenTypeId === AccessTokenEntity::TYPE_MAC) {
+            if ($this->_tokenTypeId === AccessToken::TYPE_MAC) {
                 $accessTokenEntity->type = AccessToken::TYPE_MAC;
                 $accessTokenEntity->mac_key = $this->encrypt($accessTokenEntity->getIdentifier());
             }
@@ -79,7 +80,9 @@ abstract class AccessTokenRepository implements AccessTokenRepositoryInterface
             // TODO[d6, 14/10/16]: transaction
             if ($accessTokenEntity->save()) {
                 foreach ($accessTokenEntity->getScopes() as $scope) {
-                    $accessTokenEntity->link('grantedScopes', $scope);
+                    if ($scope instanceof Scope) {
+                        $accessTokenEntity->link('grantedScopes', $scope);
+                    }
                 }
             }
         }
@@ -95,21 +98,21 @@ abstract class AccessTokenRepository implements AccessTokenRepositoryInterface
      */
     public function isAccessTokenRevoked($tokenId)
     {
-        /** @var AccessTokenEntity $token */
-        $token = AccessTokenEntity::find()
+        /** @var AccessToken $token */
+        $token = AccessToken::find()
             ->active()
             ->identifier($tokenId)
             ->one();
 
         if (
-            $token instanceof AccessTokenEntity
+            $token instanceof AccessToken
             && $token->type !== $this->_tokenTypeId
         ) {
             $this->revokeAccessToken($tokenId);
             return true;
         }
 
-        return $token instanceof AccessTokenEntity === false;
+        return $token instanceof AccessToken === false;
     }
 
     /**

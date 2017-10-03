@@ -25,7 +25,8 @@ use yii\db\ActiveRecord;
  */
 class RefreshToken extends ActiveRecord implements RefreshTokenEntityInterface
 {
-    use EntityTrait, RefreshTokenTrait;
+    use EntityTrait;
+    use RefreshTokenTrait; // todo: get rid of this
 
     const STATUS_ACTIVE = 1;
     const STATUS_REVOKED = -10;

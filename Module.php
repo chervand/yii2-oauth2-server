@@ -32,6 +32,10 @@ use yii\web\GroupUrlRule;
  * @package chervand\yii2\oauth2\server
  *
  * @property AuthorizationServer $authorizationServer
+ *
+ * @todo: ability to define access token type for refresh token grant, client-refresh grant type connection review
+ * @todo: enabledGrantTypes configuration callback instead of array
+ *
  */
 class Module extends \yii\base\Module implements BootstrapInterface
 {
@@ -189,6 +193,7 @@ class Module extends \yii\base\Module implements BootstrapInterface
      */
     protected function getClientEntity()
     {
+        // todo: can we get rid of this?
         if (!$this->_clientEntity instanceof ClientEntityInterface) {
             $this->_clientEntity = $this->getClientRepository()
                 ->getClientEntity('client1', null, null, false, false);
