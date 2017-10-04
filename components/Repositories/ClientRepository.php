@@ -4,8 +4,9 @@ namespace chervand\yii2\oauth2\server\components\Repositories;
 
 use chervand\yii2\oauth2\server\models\Client;
 use League\OAuth2\Server\Repositories\ClientRepositoryInterface;
+use yii\base\Component;
 
-class ClientRepository implements ClientRepositoryInterface
+class ClientRepository extends Component implements ClientRepositoryInterface
 {
     /**
      * {@inheritdoc}

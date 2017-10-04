@@ -6,9 +6,10 @@ use chervand\yii2\oauth2\server\models\Scope;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Entities\ScopeEntityInterface;
 use League\OAuth2\Server\Repositories\ScopeRepositoryInterface;
+use yii\base\Component;
 use yii\db\ActiveRecord;
 
-class ScopeRepository implements ScopeRepositoryInterface
+class ScopeRepository extends Component  implements ScopeRepositoryInterface
 {
 
     /**

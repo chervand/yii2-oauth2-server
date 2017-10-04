@@ -42,21 +42,36 @@ See [OAuth 2.0 Server installation](https://oauth2.thephpleague.com/installation
 Configure the module:
 
 ```php
-...
-'modules' => [
-    'oauth2' => [
-        'class' => \chervand\yii2\oauth2\server\Module::class,
-        'privateKey' => __DIR__ . '/../private.key',
-        'publicKey' => __DIR__ . '/../public.key',
-        'userRepository' => \app\components\UserRepository::class,
-        'enabledGrantTypes' => [
-            new \League\OAuth2\Server\Grant\ImplicitGrant(new \DateInterval('PT1H')),
-            new \League\OAuth2\Server\Grant\ClientCredentialsGrant(),
+<?php 
+/** 
+ * config/main.php 
+ */
+return [
+    // ...
+    'modules' => [
+        'oauth2' => [
+            'class' => \chervand\yii2\oauth2\server\Module::class,
+            'privateKey' => __DIR__ . '/../private.key',
+            'publicKey' => __DIR__ . '/../public.key',
+            'enableGrantTypes' => function (\chervand\yii2\oauth2\server\Module &$module) {
+                $server = $module->authorizationServer;
+                $server->enableGrantType(new \League\OAuth2\Server\Grant\ImplicitGrant(
+                    new \DateInterval('PT1H')
+                ));
+                $server->enableGrantType(new \League\OAuth2\Server\Grant\RefreshTokenGrant(
+                    $module->refreshTokenRepository
+                ));
+                $server->enableGrantType(new \League\OAuth2\Server\Grant\PasswordGrant(
+                    $module->userRepository,
+                    $module->refreshTokenRepository
+                ));
+                $server->enableGrantType(new \League\OAuth2\Server\Grant\ClientCredentialsGrant());
+            },
         ],
+        // ...
     ],
-    ...
-],
-...
+    // ...
+];
 ```
 
 Add the module to application's `bootstrap`:

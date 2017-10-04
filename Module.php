@@ -1,28 +1,25 @@
 <?php
+
 namespace chervand\yii2\oauth2\server;
 
-use chervand\yii2\oauth2\server\components\AuthorizationServer;
 use chervand\yii2\oauth2\server\components\Psr7\ServerRequest;
 use chervand\yii2\oauth2\server\components\Psr7\ServerResponse;
 use chervand\yii2\oauth2\server\components\Repositories\BearerTokenRepository;
 use chervand\yii2\oauth2\server\components\Repositories\ClientRepository;
 use chervand\yii2\oauth2\server\components\Repositories\MacTokenRepository;
+use chervand\yii2\oauth2\server\components\Repositories\RefreshTokenRepository;
 use chervand\yii2\oauth2\server\components\Repositories\ScopeRepository;
 use chervand\yii2\oauth2\server\components\ResponseTypes\BearerTokenResponse;
 use chervand\yii2\oauth2\server\components\ResponseTypes\MacTokenResponse;
 use chervand\yii2\oauth2\server\controllers\AuthorizeController;
 use chervand\yii2\oauth2\server\controllers\TokenController;
 use chervand\yii2\oauth2\server\models\Client;
+use League\OAuth2\Server\AuthorizationServer;
 use League\OAuth2\Server\CryptKey;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Exception\OAuthServerException;
-use League\OAuth2\Server\Grant\GrantTypeInterface;
 use League\OAuth2\Server\Repositories\AccessTokenRepositoryInterface;
-use League\OAuth2\Server\Repositories\ClientRepositoryInterface;
-use League\OAuth2\Server\Repositories\ScopeRepositoryInterface;
-use League\OAuth2\Server\Repositories\UserRepositoryInterface;
 use yii\base\BootstrapInterface;
-use yii\base\InvalidConfigException;
 use yii\helpers\ArrayHelper;
 use yii\rest\UrlRule;
 use yii\web\GroupUrlRule;
@@ -31,11 +28,14 @@ use yii\web\GroupUrlRule;
  * Class Module
  * @package chervand\yii2\oauth2\server
  *
- * @property AuthorizationServer $authorizationServer
+ * @property-read \League\OAuth2\Server\AuthorizationServer $authorizationServer
+ * @property-read \League\OAuth2\Server\Repositories\AccessTokenRepositoryInterface $accessTokenRepository
+ * @property \League\OAuth2\Server\Repositories\ClientRepositoryInterface $clientRepository
+ * @property \League\OAuth2\Server\Repositories\RefreshTokenRepositoryInterface $refreshTokenRepository
+ * @property \League\OAuth2\Server\Repositories\ScopeRepositoryInterface $scopeRepository
+ * @property \League\OAuth2\Server\Repositories\UserRepositoryInterface $userRepository
  *
  * @todo: ability to define access token type for refresh token grant, client-refresh grant type connection review
- * @todo: enabledGrantTypes configuration callback instead of array
- *
  */
 class Module extends \yii\base\Module implements BootstrapInterface
 {
@@ -46,31 +46,32 @@ class Module extends \yii\base\Module implements BootstrapInterface
         'authorize' => AuthorizeController::class,
         'token' => TokenController::class,
     ];
+
     /**
      * @var array
      */
     public $urlManagerRules = [];
+
     /**
      * @var CryptKey|string
      */
     public $privateKey;
+
     /**
      * @var CryptKey|string
      */
     public $publicKey;
+
     /**
-     * @var UserRepositoryInterface
+     * @var callable todo: doc
      */
-    public $userRepository;
-    /**
-     * @var GrantTypeInterface[]
-     */
-    public $enabledGrantTypes = [];
+    public $enableGrantTypes;
 
     /**
      * @var AuthorizationServer
      */
     private $_authorizationServer;
+
     /**
      * @var ServerRequest
      */
@@ -83,14 +84,7 @@ class Module extends \yii\base\Module implements BootstrapInterface
      * @var AccessTokenRepositoryInterface
      */
     private $_accessTokenRepository;
-    /**
-     * @var ClientRepositoryInterface
-     */
-    private $_clientRepository;
-    /**
-     * @var ScopeRepositoryInterface
-     */
-    private $_scopeRepository;
+
     /**
      * @var ClientEntityInterface|Client
      */
@@ -117,9 +111,21 @@ class Module extends \yii\base\Module implements BootstrapInterface
             ]))->rules, false);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function init()
     {
-        $this->userRepository = $this->prepareUserRepository();
+        parent::init();
+
+        \Yii::configure($this, [
+            'components' => ArrayHelper::merge([
+                'clientRepository' => ClientRepository::class,
+                'refreshTokenRepository' => RefreshTokenRepository::class,
+                'scopeRepository' => ScopeRepository::class,
+                'userRepository' => \Yii::$app->user->identityClass,
+            ], $this->components)
+        ]);
 
         if (!$this->privateKey instanceof CryptKey) {
             $this->privateKey = new CryptKey($this->privateKey);
@@ -129,95 +135,38 @@ class Module extends \yii\base\Module implements BootstrapInterface
         }
     }
 
-    protected function prepareUserRepository()
-    {
-        if (!isset($this->userRepository)) {
-            $this->userRepository = \Yii::$app->user->identityClass;
-        }
-
-        if (
-            is_string($this->userRepository)
-            && class_exists($this->userRepository)
-        ) {
-            $this->userRepository = new $this->userRepository();
-        }
-
-        if (!$this->userRepository instanceof UserRepositoryInterface) {
-            throw new InvalidConfigException('"userRepository" must be an instance of ' . UserRepositoryInterface::class);
-        }
-
-        return $this->userRepository;
-    }
-
     /**
      * @return AuthorizationServer
      */
     public function getAuthorizationServer()
     {
         if (!$this->_authorizationServer instanceof AuthorizationServer) {
-            $this->_authorizationServer = $this->prepareAuthorizationServer();
+            $this->prepareAuthorizationServer();
         }
 
         return $this->_authorizationServer;
     }
 
     /**
-     * @return AuthorizationServer
      */
     protected function prepareAuthorizationServer()
     {
-        $server = new AuthorizationServer(
-            $this->getClientRepository(),
-            $this->getAccessTokenRepository(),
-            $this->getScopeRepository(),
+        $this->_authorizationServer = new AuthorizationServer(
+            $this->clientRepository,
+            $this->accessTokenRepository,
+            $this->scopeRepository,
             $this->privateKey,
             $this->publicKey,
             $this->getClientEntity()->getResponseType()
         );
 
-        foreach ($this->enabledGrantTypes as $enabledGrantType) {
-            if ($enabledGrantType instanceof GrantTypeInterface) {
-                $server->enableGrantType(
-                    $enabledGrantType,
-                    new \DateInterval('PT1H') // access tokens will expire after 1 hour
-                );
-            }
+        if (is_callable($this->enableGrantTypes) !== true) {
+            $this->enableGrantTypes = function (Module &$module) {
+                // todo: enable auth code grant by default when implemented
+            };
         }
 
-        return $server;
-    }
-
-    /**
-     * @return Client
-     * @throws OAuthServerException
-     */
-    protected function getClientEntity()
-    {
-        // todo: can we get rid of this?
-        if (!$this->_clientEntity instanceof ClientEntityInterface) {
-            $this->_clientEntity = $this->getClientRepository()
-                ->getClientEntity('client1', null, null, false, false);
-        }
-
-        if ($this->_clientEntity instanceof ClientEntityInterface) {
-            return $this->_clientEntity;
-        }
-
-        throw OAuthServerException::invalidClient();
-    }
-
-    public function setClientEntity(ClientEntityInterface $clientEntity)
-    {
-        $this->_clientEntity = $clientEntity;
-    }
-
-    public function getClientRepository()
-    {
-        if (!isset($this->_clientRepository)) {
-            $this->_clientRepository = new ClientRepository();
-        }
-
-        return $this->_clientRepository;
+        call_user_func_array($this->enableGrantTypes, [&$this]);
     }
 
     public function getAccessTokenRepository()
@@ -246,13 +195,28 @@ class Module extends \yii\base\Module implements BootstrapInterface
         );
     }
 
-    public function getScopeRepository()
+    /**
+     * @return Client
+     * @throws OAuthServerException
+     */
+    protected function getClientEntity()
     {
-        if (!$this->_scopeRepository instanceof ScopeRepositoryInterface) {
-            $this->_scopeRepository = new ScopeRepository();
+        // todo: fix this
+        if (!$this->_clientEntity instanceof ClientEntityInterface) {
+            $this->_clientEntity = $this->clientRepository
+                ->getClientEntity('client1', null, null, false, false);
         }
 
-        return $this->_scopeRepository;
+        if ($this->_clientEntity instanceof ClientEntityInterface) {
+            return $this->_clientEntity;
+        }
+
+        throw OAuthServerException::invalidClient();
+    }
+
+    public function setClientEntity(ClientEntityInterface $clientEntity)
+    {
+        $this->_clientEntity = $clientEntity;
     }
 
     /**
@@ -261,21 +225,12 @@ class Module extends \yii\base\Module implements BootstrapInterface
     public function getServerRequest()
     {
         if (!$this->_serverRequest instanceof ServerRequest) {
-            $this->_serverRequest = $this->prepareServerRequest();
+            $request = \Yii::$app->request;
+            $this->_serverRequest = (new ServerRequest($request))
+                ->withParsedBody($request->bodyParams);
         }
 
         return $this->_serverRequest;
-    }
-
-    /**
-     * @return ServerRequest
-     */
-    protected function prepareServerRequest()
-    {
-        $request = \Yii::$app->request;
-
-        return (new ServerRequest($request))
-            ->withParsedBody($request->bodyParams);
     }
 
     /**
@@ -284,17 +239,9 @@ class Module extends \yii\base\Module implements BootstrapInterface
     public function getServerResponse()
     {
         if (!$this->_serverResponse instanceof ServerResponse) {
-            $this->_serverResponse = $this->prepareServerResponse();
+            $this->_serverResponse = new ServerResponse();
         }
 
         return $this->_serverResponse;
-    }
-
-    /**
-     * @return ServerResponse
-     */
-    protected function prepareServerResponse()
-    {
-        return new ServerResponse();
     }
 }

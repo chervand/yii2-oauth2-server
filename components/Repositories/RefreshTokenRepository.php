@@ -6,12 +6,13 @@ use chervand\yii2\oauth2\server\models\RefreshToken;
 use League\OAuth2\Server\Entities\RefreshTokenEntityInterface;
 use League\OAuth2\Server\Exception\OAuthServerException;
 use League\OAuth2\Server\Repositories\RefreshTokenRepositoryInterface;
+use yii\base\Component;
 
 /**
  * Class RefreshTokenRepository
  * @package chervand\yii2\oauth2\server\components\Repositories
  */
-class RefreshTokenRepository implements RefreshTokenRepositoryInterface
+class RefreshTokenRepository extends Component implements RefreshTokenRepositoryInterface
 {
     /**
      * {@inheritdoc}
