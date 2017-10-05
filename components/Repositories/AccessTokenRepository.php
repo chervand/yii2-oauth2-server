@@ -23,21 +23,14 @@ abstract class AccessTokenRepository implements AccessTokenRepositoryInterface
      */
     private $_tokenTypeId;
 
-    public function __construct($tokenTypeId, $privateKey = null, $publicKey = null)
+    public function __construct($tokenTypeId, $encryptionKey = null)
     {
         if (!in_array($tokenTypeId, [AccessToken::TYPE_BEARER, AccessToken::TYPE_MAC])) {
             throw new InvalidConfigException('Unknown token type.');
         }
 
         $this->_tokenTypeId = $tokenTypeId;
-
-        if ($privateKey instanceof CryptKey) {
-            $this->setPrivateKey($privateKey);
-        }
-
-        if ($publicKey instanceof CryptKey) {
-            $this->setPublicKey($publicKey);
-        }
+        $this->setEncryptionKey($encryptionKey);
     }
 
     /**

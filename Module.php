@@ -71,6 +71,10 @@ class Module extends \yii\base\Module implements BootstrapInterface
      * @var AuthorizationServer
      */
     private $_authorizationServer;
+    /**
+     * @var string
+     */
+    private $_encryptionKey;
 
     /**
      * @var ServerRequest
@@ -156,7 +160,7 @@ class Module extends \yii\base\Module implements BootstrapInterface
             $this->accessTokenRepository,
             $this->scopeRepository,
             $this->privateKey,
-            $this->publicKey,
+            $this->_encryptionKey,
             $this->getClientEntity()->getResponseType()
         );
 
@@ -182,17 +186,14 @@ class Module extends \yii\base\Module implements BootstrapInterface
     {
         switch (get_class($this->getClientEntity()->getResponseType())) {
             case MacTokenResponse::class:
-                $class = MacTokenRepository::class;
+                $tokenRepository = new MacTokenRepository($this->_encryptionKey);
                 break;
             case BearerTokenResponse::class:
             default:
-                $class = BearerTokenRepository::class;
+                $tokenRepository = new BearerTokenRepository();
         }
 
-        return new $class(
-            $this->privateKey,
-            $this->publicKey
-        );
+        return $tokenRepository;
     }
 
     /**
@@ -243,5 +244,13 @@ class Module extends \yii\base\Module implements BootstrapInterface
         }
 
         return $this->_serverResponse;
+    }
+
+    /**
+     * @param string $encryptionKey
+     */
+    public function setEncryptionKey($encryptionKey)
+    {
+        $this->_encryptionKey = $encryptionKey;
     }
 }

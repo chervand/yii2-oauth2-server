@@ -6,12 +6,8 @@ use chervand\yii2\oauth2\server\models\AccessToken;
 
 class BearerTokenRepository extends AccessTokenRepository
 {
-    public function __construct($privateKey = null, $publicKey = null)
+    public function __construct()
     {
-        parent::__construct(
-            AccessToken::TYPE_BEARER,
-            $privateKey,
-            $publicKey
-        );
+        parent::__construct(AccessToken::TYPE_BEARER);
     }
 }
