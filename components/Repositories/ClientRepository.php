@@ -10,23 +10,20 @@ class ClientRepository extends Component implements ClientRepositoryInterface
 {
     /**
      * {@inheritdoc}
-     *
-     * @param boolean $mustValidateGrant
      */
     public function getClientEntity(
         $clientIdentifier,
         $grantType,
         $clientSecret = null,
-        $mustValidateSecret = true,
-        $mustValidateGrant = true
+        $mustValidateSecret = true
     ) {
         $clientEntity = Client::getDb()
-            ->cache(function () use ($clientIdentifier, $grantType, $mustValidateGrant) {
+            ->cache(function () use ($clientIdentifier, $grantType) {
 
                 $query = Client::find()
                     ->with(['permittedScopes']);
 
-                if ($mustValidateGrant === true) {
+                if ($grantType !== null) {
                     $query->grant($grantType);
                 }
 

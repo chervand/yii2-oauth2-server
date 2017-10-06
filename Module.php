@@ -9,7 +9,6 @@ use chervand\yii2\oauth2\server\components\Repositories\ClientRepository;
 use chervand\yii2\oauth2\server\components\Repositories\MacTokenRepository;
 use chervand\yii2\oauth2\server\components\Repositories\RefreshTokenRepository;
 use chervand\yii2\oauth2\server\components\Repositories\ScopeRepository;
-use chervand\yii2\oauth2\server\components\ResponseTypes\BearerTokenResponse;
 use chervand\yii2\oauth2\server\components\ResponseTypes\MacTokenResponse;
 use chervand\yii2\oauth2\server\controllers\AuthorizeController;
 use chervand\yii2\oauth2\server\controllers\TokenController;
@@ -34,6 +33,7 @@ use yii\web\GroupUrlRule;
  * @property \League\OAuth2\Server\Repositories\RefreshTokenRepositoryInterface $refreshTokenRepository
  * @property \League\OAuth2\Server\Repositories\ScopeRepositoryInterface $scopeRepository
  * @property \League\OAuth2\Server\Repositories\UserRepositoryInterface $userRepository
+ * @property \League\OAuth2\Server\ResponseTypes\ResponseTypeInterface $responseType
  *
  * @todo: ability to define access token type for refresh token grant, client-refresh grant type connection review
  */
@@ -93,6 +93,10 @@ class Module extends \yii\base\Module implements BootstrapInterface
      * @var ClientEntityInterface|Client
      */
     private $_clientEntity;
+    /**
+     * @var \League\OAuth2\Server\ResponseTypes\ResponseTypeInterface
+     */
+    private $_responseType;
 
 
     /**
@@ -155,18 +159,20 @@ class Module extends \yii\base\Module implements BootstrapInterface
      */
     protected function prepareAuthorizationServer()
     {
+        $this->_responseType = ArrayHelper::getValue($this, 'clientEntity.responseType');
+
         $this->_authorizationServer = new AuthorizationServer(
             $this->clientRepository,
             $this->accessTokenRepository,
             $this->scopeRepository,
             $this->privateKey,
             $this->_encryptionKey,
-            $this->getClientEntity()->getResponseType()
+            $this->_responseType
         );
 
         if (is_callable($this->enableGrantTypes) !== true) {
             $this->enableGrantTypes = function (Module &$module) {
-                // todo: enable auth code grant by default when implemented
+                throw OAuthServerException::unsupportedGrantType();
             };
         }
 
@@ -184,16 +190,11 @@ class Module extends \yii\base\Module implements BootstrapInterface
 
     protected function prepareAccessTokenRepository()
     {
-        switch (get_class($this->getClientEntity()->getResponseType())) {
-            case MacTokenResponse::class:
-                $tokenRepository = new MacTokenRepository($this->_encryptionKey);
-                break;
-            case BearerTokenResponse::class:
-            default:
-                $tokenRepository = new BearerTokenRepository();
+        if ($this->_responseType instanceof MacTokenResponse) {
+            return new MacTokenRepository($this->_encryptionKey);
         }
 
-        return $tokenRepository;
+        return new BearerTokenRepository();
     }
 
     /**
@@ -202,10 +203,14 @@ class Module extends \yii\base\Module implements BootstrapInterface
      */
     protected function getClientEntity()
     {
-        // todo: fix this
         if (!$this->_clientEntity instanceof ClientEntityInterface) {
+            $request = \Yii::$app->request;
             $this->_clientEntity = $this->clientRepository
-                ->getClientEntity('client1', null, null, false, false);
+                ->getClientEntity(
+                    $request->getAuthUser(),
+                    null, // fixme: need to provide grant type
+                    $request->getAuthPassword()
+                );
         }
 
         if ($this->_clientEntity instanceof ClientEntityInterface) {
