@@ -102,3 +102,7 @@ Controller's behaviors configuration:
         return $behaviors;
     }
 ```
+
+### RBAC
+
+TBA
