@@ -68,7 +68,6 @@ abstract class AccessTokenRepository implements AccessTokenRepositoryInterface
                 $accessTokenEntity->type = AccessToken::TYPE_MAC;
                 $accessTokenEntity->mac_key = $this->encrypt($accessTokenEntity->getIdentifier());
             }
-            $accessTokenEntity->user_id = $accessTokenEntity->getUserIdentifier();
             $accessTokenEntity->expired_at = $accessTokenEntity->getExpiryDateTime()->getTimestamp();
 
 

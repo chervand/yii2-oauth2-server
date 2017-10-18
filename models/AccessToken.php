@@ -147,4 +147,20 @@ class AccessToken extends ActiveRecord implements AccessTokenEntityInterface
 
         return array_values($this->scopes);
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setUserIdentifier($identifier)
+    {
+        $this->user_id = $identifier;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getUserIdentifier()
+    {
+        return $this->user_id;
+    }
 }

@@ -9,7 +9,7 @@ use yii\rbac\Rule;
  * model passed to parameters is owned by a current user.
  *
  * @package app\components\rbac
- * @see OwnableInterface
+ * @see OwnedInterface
  */
 class OwnedRule extends Rule
 {
@@ -31,7 +31,7 @@ class OwnedRule extends Rule
         }
 
         return
-            $params['model'] instanceof OwnableInterface
+            $params['model'] instanceof OwnedInterface
             && $params['model']->getOwnerId() === $user;
     }
 }

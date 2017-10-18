@@ -8,7 +8,7 @@ use yii\web\IdentityInterface;
  * Interface OwnableInterface
  * @package app\components\rbac
  */
-interface OwnableInterface
+interface OwnedInterface
 {
     /**
      * @see IdentityInterface::getId()
