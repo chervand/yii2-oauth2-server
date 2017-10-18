@@ -59,6 +59,7 @@ class Permission extends \yii\rbac\Permission implements Configurable
             $authManager->add($permission);
 
             if ($authManager->canAddChild($this, $permission)) {
+                $authManager->removeChild($this, $permission);
                 $authManager->addChild($this, $permission);
             }
         }
