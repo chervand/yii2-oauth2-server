@@ -20,8 +20,7 @@ class ClientRepository extends Component implements ClientRepositoryInterface
         $clientEntity = Client::getDb()
             ->cache(function () use ($clientIdentifier, $grantType) {
 
-                $query = Client::find()
-                    ->with(['permittedScopes']);
+                $query = Client::find();
 
                 if ($grantType !== null) {
                     $query->grant($grantType);

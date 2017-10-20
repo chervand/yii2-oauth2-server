@@ -38,8 +38,10 @@ class ClientQuery extends ActiveQuery
      */
     public function active()
     {
-        return $this->andWhere([
-            Client::tableName() . '.`status`' => Client::STATUS_ACTIVE
-        ]);
+        return $this
+            ->innerJoinWith(['relatedScopes'])
+            ->andWhere([
+                Client::tableName() . '.`status`' => Client::STATUS_ACTIVE
+            ]);
     }
 }

@@ -1,4 +1,5 @@
 <?php
+
 namespace chervand\yii2\oauth2\server\components\Repositories;
 
 use chervand\yii2\oauth2\server\models\Client;
@@ -7,9 +8,10 @@ use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Entities\ScopeEntityInterface;
 use League\OAuth2\Server\Repositories\ScopeRepositoryInterface;
 use yii\base\Component;
+use yii\db\ActiveQuery;
 use yii\db\ActiveRecord;
 
-class ScopeRepository extends Component  implements ScopeRepositoryInterface
+class ScopeRepository extends Component implements ScopeRepositoryInterface
 {
 
     /**
@@ -30,34 +32,46 @@ class ScopeRepository extends Component  implements ScopeRepositoryInterface
     }
 
     /**
-     * Given a client, grant type and optional user identifier validate the set of scopes requested are valid and optionally
-     * append additional scopes or remove requested scopes.
-     *
-     * @param ScopeEntityInterface[] $scopes
-     * @param string $grantType
-     * @param ClientEntityInterface|Client $clientEntity
-     * @param null|string $userIdentifier
-     *
-     * @return ScopeEntityInterface[]
+     * {@inheritdoc}
      */
     public function finalizeScopes(
         array $scopes,
         $grantType,
         ClientEntityInterface $clientEntity,
         $userIdentifier = null
-    )
-    {
-        if (empty($scopes)) {
-            return $clientEntity->permittedScopes;
-        }
+    ) {
 
-        return array_filter($scopes, function (Scope $scope) use ($clientEntity) {
-            foreach ($clientEntity->permittedScopes as $permittedScope) {
-                if ($permittedScope->identifier === $scope->identifier) {
-                    return $scope;
+        /** @var Client $clientEntity */
+        return $clientEntity::getDb()
+            ->cache(function () use ($scopes, $grantType, $clientEntity, $userIdentifier) {
+
+                $permittedScopes = $clientEntity->getRelatedScopes(
+
+                    function (ActiveQuery $query) use ($scopes, $grantType, $userIdentifier) {
+
+                        if (empty($scopes) === true) {
+                            $query->andWhere(['is_default' => true]);
+                        }
+
+                        // common and assigned to user
+                        $query->andWhere(['or', ['user_id' => null], ['user_id' => $userIdentifier]]);
+
+                        // common and grant-specific
+                        $query->andWhere([
+                            'or',
+                            ['grant_type' => null],
+                            ['grant_type' => Client::getGrantTypeId($grantType)]
+                        ]);
+
+                    }
+                );
+
+                if (empty($scopes) === false) {
+                    $permittedScopes->andWhere(['in', 'identifier', $scopes]);
                 }
-            }
-            return null;
-        });
+
+                return $permittedScopes->all();
+            });
+
     }
 }

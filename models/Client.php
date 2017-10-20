@@ -24,7 +24,8 @@ use yii\helpers\ArrayHelper;
  * @property integer $updated_at
  * @property integer $status
  *
- * @property Scope[] $permittedScopes
+ * @property Scope[] $relatedScopes
+ * @property Scope[] $relatedScopesDefault
  */
 class Client extends ActiveRecord implements ClientEntityInterface
 {
@@ -123,14 +124,13 @@ class Client extends ActiveRecord implements ClientEntityInterface
     }
 
     /**
-     * Permitted for the client scopes relation.
-     *
+     * @param callable|null $callable
      * @return ClientQuery|ActiveQuery
      */
-    public function getPermittedScopes()
+    public function getRelatedScopes(callable $callable = null)
     {
         return $this->hasMany(Scope::className(), ['id' => 'scope_id'])
-            ->viaTable('{{auth__client_scope}}', ['client_id' => 'id']);
+            ->viaTable('{{auth__client_scope}}', ['client_id' => 'id'], $callable);
     }
 
     public function getIsConfidential()

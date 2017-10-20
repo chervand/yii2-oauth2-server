@@ -58,11 +58,17 @@ class m160920_072449_auth extends Migration
                 'name' => Schema::TYPE_STRING,
             ],
             '{{%auth__client_scope}}' => [
+                'id' => Schema::TYPE_PK,
                 'client_id' => Schema::TYPE_INTEGER . ' NOT NULL',
                 'scope_id' => Schema::TYPE_INTEGER . ' NOT NULL',
-                'PRIMARY KEY (client_id, scope_id)',
+                'user_id' => Schema::TYPE_INTEGER . ' DEFAULT NULL', // common if null
+                'grant_type' => Schema::TYPE_SMALLINT . ' DEFAULT NULL', // all grants if null
+                'is_default' => Schema::TYPE_BOOLEAN . ' NOT NULL DEFAULT 0',
+                'UNIQUE KEY (client_id, scope_id, user_id, grant_type)',
                 'FOREIGN KEY (client_id) REFERENCES {{%auth__client}} (id) ON DELETE CASCADE ON UPDATE CASCADE',
                 'FOREIGN KEY (scope_id) REFERENCES {{%auth__scope}} (id) ON DELETE CASCADE ON UPDATE CASCADE',
+                'KEY (grant_type)',
+                'KEY (is_default)',
             ],
             '{{%auth__access_token_scope}}' => [
                 'access_token_id' => Schema::TYPE_INTEGER . ' NOT NULL',
