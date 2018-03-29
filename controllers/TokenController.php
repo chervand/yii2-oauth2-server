@@ -1,4 +1,5 @@
 <?php
+
 namespace chervand\yii2\oauth2\server\controllers;
 
 use chervand\yii2\oauth2\server\components\Exception\OAuthHttpException;
@@ -17,11 +18,23 @@ class TokenController extends ActiveController
     public $modelClass = AccessToken::class;
 
 
+    /**
+     * {@inheritdoc}
+     */
     public function actions()
     {
-        return [];
+        return [
+            'options' => [
+                'class' => 'yii\rest\OptionsAction',
+            ],
+        ];
     }
 
+    /**
+     * @return mixed
+     * @throws HttpException
+     * @throws OAuthHttpException
+     */
     public function actionCreate()
     {
         /** @var Module $module */
