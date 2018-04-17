@@ -19,6 +19,7 @@ use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Exception\OAuthServerException;
 use League\OAuth2\Server\Repositories\AccessTokenRepositoryInterface;
 use yii\base\BootstrapInterface;
+use yii\filters\Cors;
 use yii\helpers\ArrayHelper;
 use yii\rest\UrlRule;
 use yii\web\GroupUrlRule;
