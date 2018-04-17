@@ -43,8 +43,14 @@ class Module extends \yii\base\Module implements BootstrapInterface
      * @var array
      */
     public $controllerMap = [
-        'authorize' => AuthorizeController::class,
-        'token' => TokenController::class,
+        'authorize' => [
+            'class' => AuthorizeController::class,
+            'as corsFilter' => Cors::class,
+        ],
+        'token' => [
+            'class' => TokenController::class,
+            'as corsFilter' => Cors::class,
+        ],
     ];
 
     /**
