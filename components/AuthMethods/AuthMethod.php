@@ -7,6 +7,7 @@ use chervand\yii2\oauth2\server\components\ResourceServer;
 use League\OAuth2\Server\CryptKey;
 use League\OAuth2\Server\Exception\OAuthServerException;
 use League\OAuth2\Server\Repositories\AccessTokenRepositoryInterface;
+use yii\rbac\BaseManager;
 use yii\web\HttpException;
 use yii\web\Request;
 use yii\web\Response;
@@ -18,6 +19,7 @@ abstract class AuthMethod extends \yii\filters\auth\AuthMethod
      * @var CryptKey|string
      */
     public $publicKey;
+    public $setAuthManagerDefaultRoles = true;
 
     public function authenticate($user, $request, $response)
     {
@@ -80,6 +82,12 @@ abstract class AuthMethod extends \yii\filters\auth\AuthMethod
                 || $serverRequest->getAttribute('oauth_user_id') != $identity->getId()
             ) {
                 $this->handleFailure($response);
+            }
+
+            /** @var BaseManager $authManager */
+            $authManager = \Yii::$app->authManager;
+            if ($authManager instanceof BaseManager && $this->setAuthManagerDefaultRoles === true) {
+                $authManager->defaultRoles = $serverRequest->getAttribute('oauth_scopes', []);
             }
 
             return $identity;

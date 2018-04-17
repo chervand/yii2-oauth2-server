@@ -23,11 +23,11 @@ class m160920_072449_auth extends Migration
             '{{%auth__client}}' => [
                 'id' => Schema::TYPE_PK,
                 'identifier' => Schema::TYPE_STRING . ' NOT NULL',
-                'secret' => Schema::TYPE_STRING . ' NOT NULL',
+                'secret' => Schema::TYPE_STRING, // not confidential if null
                 'name' => Schema::TYPE_STRING . ' NOT NULL',
                 'redirect_uri' => Schema::TYPE_STRING,
                 'token_type' => Schema::TYPE_SMALLINT . ' NOT NULL DEFAULT 1', // Bearer
-                'grant_type' => Schema::TYPE_SMALLINT,
+                'grant_type' => Schema::TYPE_SMALLINT . ' NOT NULL DEFAULT 1', // Authorization Code
                 'created_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
                 'updated_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
                 'status' => Schema::TYPE_SMALLINT . ' NOT NULL DEFAULT 1', // Active,
@@ -49,8 +49,8 @@ class m160920_072449_auth extends Migration
                 'status' => Schema::TYPE_SMALLINT . ' NOT NULL DEFAULT 1', // Active,
                 'FOREIGN KEY (client_id) REFERENCES {{%auth__client}} (id) ON DELETE CASCADE ON UPDATE CASCADE',
                 'KEY (type)',
-                'KEY (status)',
                 'KEY (mac_algorithm)',
+                'KEY (status)',
             ],
             '{{%auth__scope}}' => [
                 'id' => Schema::TYPE_PK,
@@ -58,11 +58,17 @@ class m160920_072449_auth extends Migration
                 'name' => Schema::TYPE_STRING,
             ],
             '{{%auth__client_scope}}' => [
+                'id' => Schema::TYPE_PK,
                 'client_id' => Schema::TYPE_INTEGER . ' NOT NULL',
                 'scope_id' => Schema::TYPE_INTEGER . ' NOT NULL',
-                'PRIMARY KEY (client_id, scope_id)',
+                'user_id' => Schema::TYPE_INTEGER . ' DEFAULT NULL', // common if null
+                'grant_type' => Schema::TYPE_SMALLINT . ' DEFAULT NULL', // all grants if null
+                'is_default' => Schema::TYPE_BOOLEAN . ' NOT NULL DEFAULT 0',
+                'UNIQUE KEY (client_id, scope_id, user_id, grant_type)',
                 'FOREIGN KEY (client_id) REFERENCES {{%auth__client}} (id) ON DELETE CASCADE ON UPDATE CASCADE',
                 'FOREIGN KEY (scope_id) REFERENCES {{%auth__scope}} (id) ON DELETE CASCADE ON UPDATE CASCADE',
+                'KEY (grant_type)',
+                'KEY (is_default)',
             ],
             '{{%auth__access_token_scope}}' => [
                 'access_token_id' => Schema::TYPE_INTEGER . ' NOT NULL',
@@ -73,6 +79,13 @@ class m160920_072449_auth extends Migration
             ],
             '{{%auth__refresh_token}}' => [
                 'id' => Schema::TYPE_PK,
+                'access_token_id' => Schema::TYPE_INTEGER . ' NOT NULL',
+                'identifier' => Schema::TYPE_STRING . ' NOT NULL',
+                'created_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
+                'updated_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
+                'status' => Schema::TYPE_SMALLINT . ' NOT NULL DEFAULT 1', // Active,
+                'FOREIGN KEY (access_token_id) REFERENCES {{%auth__access_token}} (id) ON DELETE CASCADE ON UPDATE CASCADE',
+                'KEY (status)',
             ],
             '{{%auth__auth_code}}' => [
                 'id' => Schema::TYPE_PK,

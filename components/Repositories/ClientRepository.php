@@ -1,31 +1,28 @@
 <?php
+
 namespace chervand\yii2\oauth2\server\components\Repositories;
 
 use chervand\yii2\oauth2\server\models\Client;
 use League\OAuth2\Server\Repositories\ClientRepositoryInterface;
+use yii\base\Component;
 
-class ClientRepository implements ClientRepositoryInterface
+class ClientRepository extends Component implements ClientRepositoryInterface
 {
     /**
      * {@inheritdoc}
-     *
-     * @param boolean $mustValidateGrant
      */
     public function getClientEntity(
         $clientIdentifier,
         $grantType,
         $clientSecret = null,
-        $mustValidateSecret = true,
-        $mustValidateGrant = true
-    )
-    {
+        $mustValidateSecret = true
+    ) {
         $clientEntity = Client::getDb()
-            ->cache(function () use ($clientIdentifier, $grantType, $mustValidateGrant) {
+            ->cache(function () use ($clientIdentifier, $grantType) {
 
-                $query = Client::find()
-                    ->with(['permittedScopes']);
+                $query = Client::find();
 
-                if ($mustValidateGrant === true) {
+                if ($grantType !== null) {
                     $query->grant($grantType);
                 }
 
@@ -36,10 +33,11 @@ class ClientRepository implements ClientRepositoryInterface
             });
 
         if (
-            $mustValidateSecret !== true
-            || (
-                $clientEntity instanceof Client
-                && Client::secretVerify($clientSecret, $clientEntity->secret)
+            $clientEntity instanceof Client
+            && (
+                $clientEntity->getIsConfidential() !== true
+                || $mustValidateSecret !== true
+                || Client::secretVerify($clientSecret, $clientEntity->secret) === true
             )
         ) {
             return $clientEntity;

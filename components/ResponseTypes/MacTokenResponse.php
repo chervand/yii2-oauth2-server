@@ -1,8 +1,9 @@
 <?php
 namespace chervand\yii2\oauth2\server\components\ResponseTypes;
 
-use chervand\yii2\oauth2\server\components\Entities\AccessTokenEntity;
+use chervand\yii2\oauth2\server\models\AccessToken;
 use League\OAuth2\Server\Entities\RefreshTokenEntityInterface;
+use League\OAuth2\Server\ResponseTypes\AbstractResponseType;
 use Psr\Http\Message\ResponseInterface;
 
 /**
@@ -11,9 +12,9 @@ use Psr\Http\Message\ResponseInterface;
  *
  * @link https://tools.ietf.org/html/draft-ietf-oauth-v2-http-mac-05
  *
- * @property AccessTokenEntity $accessToken
+ * @property AccessToken $accessToken
  */
-class MacTokenResponse extends \League\OAuth2\Server\ResponseTypes\AbstractResponseType
+class MacTokenResponse extends AbstractResponseType
 {
     /**
      * {@inheritdoc}

@@ -1,7 +1,14 @@
 <?php
 namespace chervand\yii2\oauth2\server\models;
 
+use Lcobucci\JWT\Builder;
+use Lcobucci\JWT\Signer\Key;
+use Lcobucci\JWT\Signer\Rsa\Sha256;
+use League\OAuth2\Server\CryptKey;
 use League\OAuth2\Server\CryptTrait;
+use League\OAuth2\Server\Entities\AccessTokenEntityInterface;
+use League\OAuth2\Server\Entities\Traits\AccessTokenTrait;
+use League\OAuth2\Server\Entities\Traits\TokenEntityTrait;
 use yii\db\ActiveRecord;
 use yii\helpers\ArrayHelper;
 
@@ -21,11 +28,15 @@ use yii\helpers\ArrayHelper;
  * @property integer $expired_at
  * @property integer $status
  *
- * @property Scope $grantedScopes
+ * @property Client $relatedClient
+ * @property Scope[] $grantedScopes
+ *
+ * @todo save transaction
  */
-class AccessToken extends ActiveRecord
+class AccessToken extends ActiveRecord implements AccessTokenEntityInterface
 {
-    use CryptTrait;
+    use CryptTrait, EntityTrait;
+    use AccessTokenTrait, TokenEntityTrait; // todo: get rid of this
 
     const TYPE_BEARER = 1;
     const TYPE_MAC = 2;
@@ -36,7 +47,6 @@ class AccessToken extends ActiveRecord
     const STATUS_ACTIVE = 1;
     const STATUS_REVOKED = -10;
 
-    protected static $clientEntityClass = Client::class;
 
     /**
      * @inheritdoc
@@ -55,11 +65,9 @@ class AccessToken extends ActiveRecord
         return new AccessTokenQuery(get_called_class());
     }
 
-    public function getClientEntity()
+    public function getRelatedClient()
     {
-        /** @var AccessToken $this */
-        return $this->hasOne(static::$clientEntityClass, ['id' => 'client_id'])
-            /*->inverseOf('accessTokenEntity')*/;
+        return $this->hasOne(Client::class, ['id' => 'client_id'])/* todo: ->inverseOf('accessTokens') */;
     }
 
     public function getMacAlgorithm()
@@ -82,7 +90,7 @@ class AccessToken extends ActiveRecord
     public function rules()
     {
         return [
-            [['client_id'], 'required'],
+            [['client_id'], 'required'], // identifier
             [['user_id'], 'default'],
             [['created_at', 'updated_at'], 'default', 'value' => time()],
             ['type', 'default', 'value' => static::TYPE_BEARER],
@@ -100,4 +108,59 @@ class AccessToken extends ActiveRecord
             ->viaTable('{{auth__access_token_scope}}', ['access_token_id' => 'id']);
     }
 
+    public function convertToJWT(CryptKey $privateKey)
+    {
+        $builder = (new Builder())
+            ->setAudience($this->getClient()->getIdentifier())
+            ->setId($this->getIdentifier(), true)
+            ->setIssuedAt(time())
+            ->setNotBefore(time())
+            ->setExpiration($this->getExpiryDateTime()->getTimestamp())
+            ->setSubject($this->getUserIdentifier())
+            ->set('scopes', $this->getScopes());
+
+        if ($this->type == static::TYPE_MAC) {
+            $builder
+                ->setHeader('kid', $this->identifier)
+                ->set('kid', $this->identifier)
+                ->set('mac_key', $this->mac_key);
+        }
+
+        return $builder
+            ->sign(new Sha256(), new Key($privateKey->getKeyPath(), $privateKey->getPassPhrase()))
+            ->getToken();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getClient()
+    {
+        return $this->relatedClient;
+    }
+
+    public function getScopes()
+    {
+        if (empty($this->scopes)) {
+            $this->scopes = $this->grantedScopes;
+        }
+
+        return array_values($this->scopes);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setUserIdentifier($identifier)
+    {
+        $this->user_id = $identifier;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getUserIdentifier()
+    {
+        return $this->user_id;
+    }
 }
