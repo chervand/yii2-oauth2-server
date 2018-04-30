@@ -16,7 +16,7 @@ See [OAuth 2.0 Server installation](https://oauth2.thephpleague.com/installation
 
 ### Integrating with your users
 
-To integrate OAuth 2.0 server with your users DB, you should implement `League\OAuth2\Server\Repositories\UserRepositoryInterface` for a `user` component's `identityClass` which should be extended from `chervand\yii2\oauth2\server\models\AccessToken`. `League\OAuth2\Server\Repositories\UserRepositoryInterface::getUserEntityByUserCredentials()` should return your user model instance implementing `League\OAuth2\Server\Entities\UserEntityInterface` or `null`. You may additionally add a foreign key for the `auth__access_token.user_id` column referencing your users table.
+To integrate OAuth 2.0 server with your users DB, you should implement `League\OAuth2\Server\Repositories\UserRepositoryInterface` for a `user` component's `identityClass` which should be extended from `chervand\yii2\oauth2\server\models\AccessToken`. `League\OAuth2\Server\Repositories\UserRepositoryInterface::getUserEntityByUserCredentials()` should return your user model instance implementing `League\OAuth2\Server\Entities\UserEntityInterface` or `null`. You may additionally add a foreign key for the `auth__access_token.user_id` column referencing your users table. You mau also override `getRateLimit()` to provider ` yii\filters\RateLimitInterface` with required values.
 
 ```php
 <?php 
@@ -83,24 +83,42 @@ return [
 Controller's behaviors configuration:
 
 ```php
+<?php
+
+class ActiveController extends \yii\rest\ActiveController
+{
     public function behaviors()
     {
         $behaviors = parent::behaviors();
+
+        unset($behaviors['authenticator']);
+        unset($behaviors['rateLimiter']);
+
+        /** @var \chervand\yii2\oauth2\server\Module $auth */
+        $auth = \Yii::$app->getModule('oauth2');
+
         $behaviors['authenticator'] = [
-            'class' => CompositeAuth::class,
+            'class' => \yii\filters\auth\CompositeAuth::class,
             'authMethods' => [
                 [
-                    'class' => HttpMacAuth::class,
-                    'publicKey' => $publicKey
+                    'class' => \chervand\yii2\oauth2\server\components\AuthMethods\HttpMacAuth::class,
+                    'publicKey' => $auth->publicKey
                 ],
                 [
-                    'class' => HttpBearerAuth::class,
-                    'publicKey' => $publicKey
+                    'class' => \chervand\yii2\oauth2\server\components\AuthMethods\HttpBearerAuth::class,
+                    'publicKey' => $auth->publicKey
                 ],
             ]
         ];
+
+        $behaviors['rateLimiter'] = [
+            'class' => \yii\filters\RateLimiter::class,
+        ];
+
         return $behaviors;
     }
+
+}
 ```
 
 ### RBAC
