@@ -129,7 +129,7 @@ class Client extends ActiveRecord implements ClientEntityInterface
      */
     public function getRelatedScopes(callable $callable = null)
     {
-        return $this->hasMany(Scope::className(), ['id' => 'scope_id'])
+        return $this->hasMany(Scope::class, ['id' => 'scope_id'])
             ->viaTable('{{auth__client_scope}}', ['client_id' => 'id'], $callable);
     }
 

@@ -43,6 +43,8 @@ class m160920_072449_auth extends Migration
                 'type' => Schema::TYPE_SMALLINT . ' NOT NULL DEFAULT 1', // Bearer
                 'mac_key' => Schema::TYPE_STRING,
                 'mac_algorithm' => Schema::TYPE_SMALLINT,
+                'allowance' => Schema::TYPE_SMALLINT,
+                'allowance_updated_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
                 'created_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
                 'updated_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
                 'expired_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
