@@ -1,4 +1,5 @@
 <?php
+
 namespace chervand\yii2\oauth2\server\models;
 
 use Lcobucci\JWT\Builder;
@@ -181,7 +182,10 @@ class AccessToken extends ActiveRecord implements AccessTokenEntityInterface, Ra
      */
     public function loadAllowance($request, $action)
     {
-        return [$this->allowance, $this->allowance_updated_at];
+        return [
+            $this->allowance === null ? 100 : $this->allowance,
+            $this->allowance_updated_at
+        ];
     }
 
     /**
