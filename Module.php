@@ -12,6 +12,7 @@ use chervand\yii2\oauth2\server\components\Repositories\ScopeRepository;
 use chervand\yii2\oauth2\server\components\ResponseTypes\MacTokenResponse;
 use chervand\yii2\oauth2\server\components\Server\AuthorizationServer;
 use chervand\yii2\oauth2\server\controllers\AuthorizeController;
+use chervand\yii2\oauth2\server\controllers\RevokeController;
 use chervand\yii2\oauth2\server\controllers\TokenController;
 use chervand\yii2\oauth2\server\models\Client;
 use League\OAuth2\Server\CryptKey;
@@ -46,6 +47,10 @@ class Module extends \yii\base\Module implements BootstrapInterface
     public $controllerMap = [
         'authorize' => [
             'class' => AuthorizeController::class,
+            'as corsFilter' => Cors::class,
+        ],
+        'revoke' => [
+            'class' => RevokeController::class,
             'as corsFilter' => Cors::class,
         ],
         'token' => [
@@ -121,7 +126,8 @@ class Module extends \yii\base\Module implements BootstrapInterface
                 ],
                 'rules' => ArrayHelper::merge([
                     ['controller' => $this->uniqueId . '/authorize'],
-                    ['controller' => $this->uniqueId . '/token']
+                    ['controller' => $this->uniqueId . '/revoke'],
+                    ['controller' => $this->uniqueId . '/token'],
                 ], $this->urlManagerRules)
             ]))->rules, false);
     }

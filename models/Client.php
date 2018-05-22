@@ -40,6 +40,7 @@ class Client extends ActiveRecord implements ClientEntityInterface
     const GRANT_TYPE_PASSWORD = 3;
     const GRANT_TYPE_CLIENT_CREDENTIALS = 4;
     const GRANT_TYPE_REFRESH_TOKEN = 5;
+    const GRANT_TYPE_REVOKE = 6;
 
     /**
      * @var ResponseTypeInterface
@@ -72,6 +73,7 @@ class Client extends ActiveRecord implements ClientEntityInterface
             static::GRANT_TYPE_PASSWORD => 'password',
             static::GRANT_TYPE_CLIENT_CREDENTIALS => 'client_credentials',
             static::GRANT_TYPE_REFRESH_TOKEN => 'refresh_token',
+            static::GRANT_TYPE_REVOKE => 'revoke',
         ];
     }
 

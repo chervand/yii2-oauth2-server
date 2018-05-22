@@ -3,6 +3,8 @@
 `chervand/yii2-oauth2-server` is a `Yii 2.0 PHP Framework` integration of [`thephpleague/oauth2-server`](https://github.com/thephpleague/oauth2-server) library which implements a standards compliant [`OAuth 2.0 Server`](https://tools.ietf.org/html/rfc6749) for PHP. It supports all of the grants defined in the specification with usage of `JWT` `Bearer` tokens.
 
 `chervand/yii2-oauth2-server` additionally provides [`MAC`](https://tools.ietf.org/html/draft-ietf-oauth-v2-http-mac-05) tokens support, which is not supported by the original library, because `MAC` tokens specification is currently in draft and it was not updated since 2014, so it's a pretty experimental feature.
+ 
+ It also includes tokens revocation implementation based on [RFC7009](https://tools.ietf.org/html/rfc7009).
 
 ## Installation
 
@@ -62,14 +64,18 @@ return [
                 $server->enableGrantType(new \League\OAuth2\Server\Grant\ImplicitGrant(
                     new \DateInterval('PT1H')
                 ));
-                $server->enableGrantType(new \League\OAuth2\Server\Grant\RefreshTokenGrant(
-                    $module->refreshTokenRepository
-                ));
                 $server->enableGrantType(new \League\OAuth2\Server\Grant\PasswordGrant(
                     $module->userRepository,
                     $module->refreshTokenRepository
                 ));
                 $server->enableGrantType(new \League\OAuth2\Server\Grant\ClientCredentialsGrant());
+                $server->enableGrantType(new \League\OAuth2\Server\Grant\RefreshTokenGrant(
+                    $module->refreshTokenRepository
+                ));
+                $server->enableGrantType(new \chervand\yii2\oauth2\server\components\Grant\RevokeGrant(
+                    $module->refreshTokenRepository,
+                    $module->publicKey
+                ));
             },
         ],
         // ...
