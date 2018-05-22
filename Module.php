@@ -10,10 +10,10 @@ use chervand\yii2\oauth2\server\components\Repositories\MacTokenRepository;
 use chervand\yii2\oauth2\server\components\Repositories\RefreshTokenRepository;
 use chervand\yii2\oauth2\server\components\Repositories\ScopeRepository;
 use chervand\yii2\oauth2\server\components\ResponseTypes\MacTokenResponse;
+use chervand\yii2\oauth2\server\components\Server\AuthorizationServer;
 use chervand\yii2\oauth2\server\controllers\AuthorizeController;
 use chervand\yii2\oauth2\server\controllers\TokenController;
 use chervand\yii2\oauth2\server\models\Client;
-use League\OAuth2\Server\AuthorizationServer;
 use League\OAuth2\Server\CryptKey;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Exception\OAuthServerException;
@@ -28,7 +28,7 @@ use yii\web\GroupUrlRule;
  * Class Module
  * @package chervand\yii2\oauth2\server
  *
- * @property-read \League\OAuth2\Server\AuthorizationServer $authorizationServer
+ * @property-read AuthorizationServer $authorizationServer
  * @property-read \League\OAuth2\Server\Repositories\AccessTokenRepositoryInterface $accessTokenRepository
  * @property \League\OAuth2\Server\Repositories\ClientRepositoryInterface $clientRepository
  * @property \League\OAuth2\Server\Repositories\RefreshTokenRepositoryInterface $refreshTokenRepository

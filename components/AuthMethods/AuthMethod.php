@@ -3,7 +3,7 @@ namespace chervand\yii2\oauth2\server\components\AuthMethods;
 
 use chervand\yii2\oauth2\server\components\Exception\OAuthHttpException;
 use chervand\yii2\oauth2\server\components\Psr7\ServerRequest;
-use chervand\yii2\oauth2\server\components\ResourceServer;
+use chervand\yii2\oauth2\server\components\Server\ResourceServer;
 use League\OAuth2\Server\CryptKey;
 use League\OAuth2\Server\Exception\OAuthServerException;
 use League\OAuth2\Server\Repositories\AccessTokenRepositoryInterface;
@@ -21,6 +21,14 @@ abstract class AuthMethod extends \yii\filters\auth\AuthMethod
     public $publicKey;
     public $setAuthManagerDefaultRoles = true;
 
+    /**
+     * @param User $user
+     * @param Request $request
+     * @param Response $response
+     * @return null|\yii\web\IdentityInterface
+     * @throws HttpException
+     * @throws OAuthHttpException
+     */
     public function authenticate($user, $request, $response)
     {
         if (!$this->tokenTypeExists($request)) {
@@ -60,6 +68,15 @@ abstract class AuthMethod extends \yii\filters\auth\AuthMethod
      */
     protected abstract function getTokenType();
 
+    /**
+     * @param ResourceServer $resourceServer
+     * @param ServerRequest $serverRequest
+     * @param Response $response
+     * @param User $user
+     * @return null|\yii\web\IdentityInterface
+     * @throws HttpException
+     * @throws OAuthHttpException
+     */
     protected function validate(
         ResourceServer $resourceServer,
         ServerRequest $serverRequest,

@@ -1,4 +1,5 @@
 <?php
+
 namespace chervand\yii2\oauth2\server\models;
 
 use Lcobucci\JWT\Builder;
@@ -10,6 +11,7 @@ use League\OAuth2\Server\Entities\AccessTokenEntityInterface;
 use League\OAuth2\Server\Entities\Traits\AccessTokenTrait;
 use League\OAuth2\Server\Entities\Traits\TokenEntityTrait;
 use yii\db\ActiveRecord;
+use yii\filters\RateLimitInterface;
 use yii\helpers\ArrayHelper;
 
 /**
@@ -23,6 +25,8 @@ use yii\helpers\ArrayHelper;
  * @property string $mac_key
  * @property string $mac_algorithm
  * @property integer $type
+ * @property integer $allowance
+ * @property integer $allowance_updated_at
  * @property integer $created_at
  * @property integer $updated_at
  * @property integer $expired_at
@@ -33,7 +37,7 @@ use yii\helpers\ArrayHelper;
  *
  * @todo save transaction
  */
-class AccessToken extends ActiveRecord implements AccessTokenEntityInterface
+class AccessToken extends ActiveRecord implements AccessTokenEntityInterface, RateLimitInterface
 {
     use CryptTrait, EntityTrait;
     use AccessTokenTrait, TokenEntityTrait; // todo: get rid of this
@@ -49,7 +53,7 @@ class AccessToken extends ActiveRecord implements AccessTokenEntityInterface
 
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public static function tableName()
     {
@@ -57,7 +61,7 @@ class AccessToken extends ActiveRecord implements AccessTokenEntityInterface
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      * @return AccessTokenQuery
      */
     public static function find()
@@ -92,11 +96,12 @@ class AccessToken extends ActiveRecord implements AccessTokenEntityInterface
         return [
             [['client_id'], 'required'], // identifier
             [['user_id'], 'default'],
-            [['created_at', 'updated_at'], 'default', 'value' => time()],
             ['type', 'default', 'value' => static::TYPE_BEARER],
             ['type', 'in', 'range' => [static::TYPE_BEARER, static::TYPE_MAC]],
             ['mac_algorithm', 'default', 'value' => static::MAC_ALGORITHM_HMAC_SHA256],
             ['mac_algorithm', 'in', 'range' => array_keys(static::algorithms())],
+            [['!allowance'], 'default'],
+            [['!allowance_updated_at', '!created_at', '!updated_at'], 'default', 'value' => time()],
             ['status', 'default', 'value' => static::STATUS_ACTIVE],
             ['status', 'in', 'range' => [static::STATUS_REVOKED, static::STATUS_ACTIVE]],
         ];
@@ -104,7 +109,7 @@ class AccessToken extends ActiveRecord implements AccessTokenEntityInterface
 
     public function getGrantedScopes()
     {
-        return $this->hasMany(Scope::className(), ['id' => 'scope_id'])
+        return $this->hasMany(Scope::class, ['id' => 'scope_id'])
             ->viaTable('{{auth__access_token_scope}}', ['access_token_id' => 'id']);
     }
 
@@ -162,5 +167,36 @@ class AccessToken extends ActiveRecord implements AccessTokenEntityInterface
     public function getUserIdentifier()
     {
         return $this->user_id;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getRateLimit($request, $action)
+    {
+        return [100, 600];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function loadAllowance($request, $action)
+    {
+        return [
+            $this->allowance === null ? 100 : $this->allowance,
+            $this->allowance_updated_at
+        ];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function saveAllowance($request, $action, $allowance, $timestamp)
+    {
+        $this->updateAttributes([
+            'allowance' => $allowance,
+            'allowance_updated_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ]);
     }
 }
