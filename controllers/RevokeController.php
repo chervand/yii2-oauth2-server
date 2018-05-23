@@ -11,7 +11,7 @@ use yii\rest\ActiveController;
 use yii\rest\OptionsAction;
 use yii\web\HttpException;
 
-class TokenController extends ActiveController
+class RevokeController extends ActiveController
 {
     /**
      * @var string
@@ -44,7 +44,7 @@ class TokenController extends ActiveController
         try {
 
             $response = $module->getAuthorizationServer()
-                ->respondToAccessTokenRequest(
+                ->respondToRevokeTokenRequest(
                     $module->getServerRequest(),
                     $module->getServerResponse()
                 );
@@ -58,7 +58,7 @@ class TokenController extends ActiveController
         } catch (\Exception $exception) {
 
             throw new HttpException(
-                500, 'Unable to respond to access token request.', 0,
+                500, 'Unable to respond to revoke token request.', 0,
                 YII_DEBUG ? $exception : null
             );
 
