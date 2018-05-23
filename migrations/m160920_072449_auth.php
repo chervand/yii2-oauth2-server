@@ -85,6 +85,7 @@ class m160920_072449_auth extends Migration
                 'identifier' => Schema::TYPE_STRING . ' NOT NULL',
                 'created_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
                 'updated_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
+                'expired_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
                 'status' => Schema::TYPE_SMALLINT . ' NOT NULL DEFAULT 1', // Active,
                 'FOREIGN KEY (access_token_id) REFERENCES {{%auth__access_token}} (id) ON DELETE CASCADE ON UPDATE CASCADE',
                 'KEY (status)',

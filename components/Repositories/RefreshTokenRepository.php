@@ -33,11 +33,14 @@ class RefreshTokenRepository extends Component implements RefreshTokenRepository
      */
     public function persistNewRefreshToken(RefreshTokenEntityInterface $refreshTokenEntity)
     {
-        if (
-            $refreshTokenEntity instanceof RefreshToken
-            && $refreshTokenEntity->save()
-        ) {
-            return $refreshTokenEntity;
+        if ($refreshTokenEntity instanceof RefreshToken) {
+            $refreshTokenEntity->setAttribute(
+                'expired_at',
+                $refreshTokenEntity->getExpiryDateTime()->getTimestamp()
+            );
+            if ($refreshTokenEntity->save()) {
+                return $refreshTokenEntity;
+            }
         }
 
         throw OAuthServerException::serverError('Refresh token failure');
