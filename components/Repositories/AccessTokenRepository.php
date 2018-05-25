@@ -5,7 +5,6 @@ namespace chervand\yii2\oauth2\server\components\Repositories;
 use chervand\yii2\oauth2\server\models\AccessToken;
 use chervand\yii2\oauth2\server\models\Client;
 use chervand\yii2\oauth2\server\models\Scope;
-use League\OAuth2\Server\CryptKey;
 use League\OAuth2\Server\CryptTrait;
 use League\OAuth2\Server\Entities\AccessTokenEntityInterface;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
@@ -13,6 +12,7 @@ use League\OAuth2\Server\Entities\ScopeEntityInterface;
 use League\OAuth2\Server\Exception\OAuthServerException;
 use League\OAuth2\Server\Repositories\AccessTokenRepositoryInterface;
 use yii\base\InvalidConfigException;
+use yii\caching\TagDependency;
 
 abstract class AccessTokenRepository implements AccessTokenRepositoryInterface
 {
@@ -23,6 +23,12 @@ abstract class AccessTokenRepository implements AccessTokenRepositoryInterface
      */
     private $_tokenTypeId;
 
+    /**
+     * AccessTokenRepository constructor.
+     * @param $tokenTypeId
+     * @param null|string $encryptionKey
+     * @throws InvalidConfigException
+     */
     public function __construct($tokenTypeId, $encryptionKey = null)
     {
         if (!in_array($tokenTypeId, [AccessToken::TYPE_BEARER, AccessToken::TYPE_MAC])) {
@@ -85,20 +91,12 @@ abstract class AccessTokenRepository implements AccessTokenRepositoryInterface
     }
 
     /**
-     * Check if the access token has been revoked.
-     *
-     * @param string $tokenId
-     * @return bool Return true if this token has been revoked
+     * {@inheritdoc}
+     * @throws \Throwable
      */
     public function isAccessTokenRevoked($tokenId)
     {
-        $token = AccessToken::getDb()
-            ->cache(function () use ($tokenId) {
-                return AccessToken::find()
-                    ->identifier($tokenId)
-                    ->active()
-                    ->one();
-            });
+        $token = $this->getCachedToken($tokenId);
 
         if (
             $token instanceof AccessToken
@@ -112,21 +110,48 @@ abstract class AccessTokenRepository implements AccessTokenRepositoryInterface
     }
 
     /**
-     * Revoke an access token.
-     *
-     * @param string $tokenId
-     * @return int
+     * {@inheritdoc}
      */
     public function revokeAccessToken($tokenId)
     {
-        $token = AccessToken::find()->andWhere([
-            'identifier' => $tokenId,
-        ])->active()->one();
+        $token = $this->getCachedToken($tokenId);
 
         if ($token instanceof AccessToken) {
-            return $token->updateAttributes(['status' => AccessToken::STATUS_REVOKED]);
+
+            $token->updateAttributes([
+                'status' => AccessToken::STATUS_REVOKED,
+                'updated_at' => time(),
+            ]);
+
+            TagDependency::invalidate(
+                \Yii::$app->cache,
+                static::class
+            );
+
+        }
+    }
+
+    /**
+     * @param $tokenId
+     * @return AccessToken|null
+     */
+    protected function getCachedToken($tokenId)
+    {
+        try {
+            $token = AccessToken::getDb()
+                ->cache(
+                    function () use ($tokenId) {
+                        return AccessToken::find()
+                            ->identifier($tokenId)
+                            ->active()->one();
+                    },
+                    null,
+                    new TagDependency(['tags' => static::class])
+                );
+        } catch (\Throwable $exception) {
+            $token = null;
         }
 
-        return null;
+        return $token;
     }
 }

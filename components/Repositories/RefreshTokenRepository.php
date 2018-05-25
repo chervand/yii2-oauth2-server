@@ -7,6 +7,7 @@ use League\OAuth2\Server\Entities\RefreshTokenEntityInterface;
 use League\OAuth2\Server\Exception\OAuthServerException;
 use League\OAuth2\Server\Repositories\RefreshTokenRepositoryInterface;
 use yii\base\Component;
+use yii\caching\TagDependency;
 
 /**
  * Class RefreshTokenRepository
@@ -48,28 +49,58 @@ class RefreshTokenRepository extends Component implements RefreshTokenRepository
 
     /**
      * {@inheritdoc}
-     */
-    public function revokeRefreshToken($tokenId)
-    {
-        RefreshToken::updateAll(
-            ['status' => RefreshToken::STATUS_REVOKED],
-            'identifier=:identifier',
-            [':identifier' => $tokenId]
-        );
-    }
-
-    /**
-     * Check if the refresh token has been revoked.
-     *
-     * @param string $tokenId
-     *
-     * @return bool Return true if this token has been revoked
+     * @throws \Throwable
      */
     public function isRefreshTokenRevoked($tokenId)
     {
-        return RefreshToken::find()
-                ->identifier($tokenId)
-                ->active()
-                ->exists() !== true;
+        $token = $this->getCachedToken($tokenId);
+        return $token instanceof RefreshToken === false;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function revokeRefreshToken($tokenId)
+    {
+        $token = $this->getCachedToken($tokenId);
+
+        if ($token instanceof RefreshToken) {
+
+            $token->updateAttributes([
+                'status' => RefreshToken::STATUS_REVOKED,
+                'updated_at' => time(),
+            ]);
+
+            TagDependency::invalidate(
+                \Yii::$app->cache,
+                static::class
+            );
+
+        }
+    }
+
+
+    /**
+     * @param $tokenId
+     * @return RefreshToken|null
+     */
+    protected function getCachedToken($tokenId)
+    {
+        try {
+            $token = RefreshToken::getDb()
+                ->cache(
+                    function () use ($tokenId) {
+                        return RefreshToken::find()
+                            ->identifier($tokenId)
+                            ->active()->one();
+                    },
+                    null,
+                    new TagDependency(['tags' => static::class])
+                );
+        } catch (\Throwable $exception) {
+            $token = null;
+        }
+
+        return $token;
     }
 }
