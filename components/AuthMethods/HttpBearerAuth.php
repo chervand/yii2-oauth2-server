@@ -18,7 +18,7 @@ class HttpBearerAuth extends AuthMethod
 
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function challenge($response)
     {
@@ -35,6 +35,7 @@ class HttpBearerAuth extends AuthMethod
 
     /**
      * @return AuthorizationValidatorInterface
+     * @throws \yii\base\InvalidConfigException
      */
     protected function getAuthorizationValidator()
     {
@@ -47,6 +48,7 @@ class HttpBearerAuth extends AuthMethod
 
     /**
      * @return AccessTokenRepositoryInterface
+     * @throws \yii\base\InvalidConfigException
      */
     protected function getAccessTokenRepository()
     {

@@ -11,6 +11,9 @@ class HttpMacAuth extends AuthMethod
     private $_authorizationValidator;
     private $_accessTokenRepository;
 
+    /**
+     * {@inheritdoc}
+     */
     public function challenge($response)
     {
         $response->getHeaders()->set('WWW-Authenticate', 'MAC error="Invalid credentials"');
@@ -23,6 +26,7 @@ class HttpMacAuth extends AuthMethod
 
     /**
      * @return AuthorizationValidatorInterface
+     * @throws \yii\base\InvalidConfigException
      */
     protected function getAuthorizationValidator()
     {
@@ -35,6 +39,7 @@ class HttpMacAuth extends AuthMethod
 
     /**
      * @return AccessTokenRepositoryInterface
+     * @throws \yii\base\InvalidConfigException
      */
     protected function getAccessTokenRepository()
     {

@@ -8,6 +8,7 @@ use chervand\yii2\oauth2\server\components\Repositories\BearerTokenRepository;
 use chervand\yii2\oauth2\server\components\Repositories\ClientRepository;
 use chervand\yii2\oauth2\server\components\Repositories\MacTokenRepository;
 use chervand\yii2\oauth2\server\components\Repositories\RefreshTokenRepository;
+use chervand\yii2\oauth2\server\components\Repositories\RepositoryCacheInterface;
 use chervand\yii2\oauth2\server\components\Repositories\ScopeRepository;
 use chervand\yii2\oauth2\server\components\ResponseTypes\MacTokenResponse;
 use chervand\yii2\oauth2\server\components\Server\AuthorizationServer;
@@ -19,6 +20,7 @@ use League\OAuth2\Server\CryptKey;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Exception\OAuthServerException;
 use League\OAuth2\Server\Repositories\AccessTokenRepositoryInterface;
+use League\OAuth2\Server\Repositories\RefreshTokenRepositoryInterface;
 use yii\base\BootstrapInterface;
 use yii\filters\Cors;
 use yii\helpers\ArrayHelper;
@@ -75,9 +77,14 @@ class Module extends \yii\base\Module implements BootstrapInterface
     public $publicKey;
 
     /**
-     * @var callable todo: doc
+     * @var callable
      */
     public $enableGrantTypes;
+
+    /**
+     * @var array
+     */
+    public $cache;
 
     /**
      * @var AuthorizationServer
@@ -142,9 +149,19 @@ class Module extends \yii\base\Module implements BootstrapInterface
         \Yii::configure($this, [
             'components' => ArrayHelper::merge([
                 'clientRepository' => ClientRepository::class,
-                'refreshTokenRepository' => RefreshTokenRepository::class,
                 'scopeRepository' => ScopeRepository::class,
                 'userRepository' => \Yii::$app->user->identityClass,
+                'refreshTokenRepository' => [
+                    'class' => RefreshTokenRepository::class,
+                    'cacheDuration' => ArrayHelper::getValue(
+                        $this->cache,
+                        RefreshTokenRepositoryInterface::class . '.cacheDuration'
+                    ),
+                    'cacheDependency' => ArrayHelper::getValue(
+                        $this->cache,
+                        RefreshTokenRepositoryInterface::class . '.cacheDependency'
+                    ),
+                ],
             ], $this->components)
         ]);
 
@@ -169,6 +186,7 @@ class Module extends \yii\base\Module implements BootstrapInterface
     }
 
     /**
+     *
      */
     protected function prepareAuthorizationServer()
     {
@@ -192,15 +210,29 @@ class Module extends \yii\base\Module implements BootstrapInterface
         call_user_func_array($this->enableGrantTypes, [&$this]);
     }
 
+    /**
+     * @return BearerTokenRepository|MacTokenRepository|AccessTokenRepositoryInterface
+     * @throws \yii\base\InvalidConfigException
+     */
     public function getAccessTokenRepository()
     {
         if (!$this->_accessTokenRepository instanceof AccessTokenRepositoryInterface) {
             $this->_accessTokenRepository = $this->prepareAccessTokenRepository();
         }
 
+        if ($this->_accessTokenRepository instanceof RepositoryCacheInterface) {
+            $this->_accessTokenRepository->setCache(
+                ArrayHelper::getValue($this->cache, AccessTokenRepositoryInterface::class)
+            );
+        }
+
         return $this->_accessTokenRepository;
     }
 
+    /**
+     * @return BearerTokenRepository|MacTokenRepository
+     * @throws \yii\base\InvalidConfigException
+     */
     protected function prepareAccessTokenRepository()
     {
         if ($this->_responseType instanceof MacTokenResponse) {
@@ -233,6 +265,9 @@ class Module extends \yii\base\Module implements BootstrapInterface
         throw OAuthServerException::invalidClient();
     }
 
+    /**
+     * @param ClientEntityInterface $clientEntity
+     */
     public function setClientEntity(ClientEntityInterface $clientEntity)
     {
         $this->_clientEntity = $clientEntity;

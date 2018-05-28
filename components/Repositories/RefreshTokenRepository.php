@@ -7,14 +7,18 @@ use League\OAuth2\Server\Entities\RefreshTokenEntityInterface;
 use League\OAuth2\Server\Exception\OAuthServerException;
 use League\OAuth2\Server\Repositories\RefreshTokenRepositoryInterface;
 use yii\base\Component;
+use yii\caching\Dependency;
 use yii\caching\TagDependency;
 
 /**
  * Class RefreshTokenRepository
  * @package chervand\yii2\oauth2\server\components\Repositories
  */
-class RefreshTokenRepository extends Component implements RefreshTokenRepositoryInterface
+class RefreshTokenRepository extends Component implements RefreshTokenRepositoryInterface, RepositoryCacheInterface
 {
+    use RepositoryCacheTrait;
+
+
     /**
      * {@inheritdoc}
      *
@@ -53,7 +57,12 @@ class RefreshTokenRepository extends Component implements RefreshTokenRepository
      */
     public function isRefreshTokenRevoked($tokenId)
     {
-        $token = $this->getCachedToken($tokenId);
+        $token = $this->getCachedToken(
+            $tokenId,
+            $this->getCacheDuration(),
+            $this->getCacheDependency()
+        );
+
         return $token instanceof RefreshToken === false;
     }
 
@@ -62,7 +71,11 @@ class RefreshTokenRepository extends Component implements RefreshTokenRepository
      */
     public function revokeRefreshToken($tokenId)
     {
-        $token = $this->getCachedToken($tokenId);
+        $token = $this->getCachedToken(
+            $tokenId,
+            $this->getCacheDuration(),
+            $this->getCacheDependency()
+        );
 
         if ($token instanceof RefreshToken) {
 
@@ -82,9 +95,11 @@ class RefreshTokenRepository extends Component implements RefreshTokenRepository
 
     /**
      * @param $tokenId
+     * @param null|int $duration
+     * @param null|Dependency $dependency
      * @return RefreshToken|null
      */
-    protected function getCachedToken($tokenId)
+    protected function getCachedToken($tokenId, $duration = null, $dependency = null)
     {
         try {
             $token = RefreshToken::getDb()
@@ -94,8 +109,10 @@ class RefreshTokenRepository extends Component implements RefreshTokenRepository
                             ->identifier($tokenId)
                             ->active()->one();
                     },
-                    null,
-                    new TagDependency(['tags' => static::class])
+                    $duration,
+                    $dependency instanceof Dependency
+                        ? $dependency
+                        : new TagDependency(['tags' => static::class])
                 );
         } catch (\Throwable $exception) {
             $token = null;

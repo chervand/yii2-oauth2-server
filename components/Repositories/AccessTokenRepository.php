@@ -12,16 +12,18 @@ use League\OAuth2\Server\Entities\ScopeEntityInterface;
 use League\OAuth2\Server\Exception\OAuthServerException;
 use League\OAuth2\Server\Repositories\AccessTokenRepositoryInterface;
 use yii\base\InvalidConfigException;
+use yii\caching\Dependency;
 use yii\caching\TagDependency;
 
-abstract class AccessTokenRepository implements AccessTokenRepositoryInterface
+abstract class AccessTokenRepository implements AccessTokenRepositoryInterface, RepositoryCacheInterface
 {
-    use CryptTrait;
+    use CryptTrait, RepositoryCacheTrait;
 
     /**
-     * @var integer
+     * @var int
      */
     private $_tokenTypeId;
+
 
     /**
      * AccessTokenRepository constructor.
@@ -96,7 +98,11 @@ abstract class AccessTokenRepository implements AccessTokenRepositoryInterface
      */
     public function isAccessTokenRevoked($tokenId)
     {
-        $token = $this->getCachedToken($tokenId);
+        $token = $this->getCachedToken(
+            $tokenId,
+            $this->getCacheDuration(),
+            $this->getCacheDependency()
+        );
 
         if (
             $token instanceof AccessToken
@@ -114,7 +120,11 @@ abstract class AccessTokenRepository implements AccessTokenRepositoryInterface
      */
     public function revokeAccessToken($tokenId)
     {
-        $token = $this->getCachedToken($tokenId);
+        $token = $this->getCachedToken(
+            $tokenId,
+            $this->getCacheDuration(),
+            $this->getCacheDependency()
+        );
 
         if ($token instanceof AccessToken) {
 
@@ -133,9 +143,11 @@ abstract class AccessTokenRepository implements AccessTokenRepositoryInterface
 
     /**
      * @param $tokenId
+     * @param null|int $duration
+     * @param null|Dependency $dependency
      * @return AccessToken|null
      */
-    protected function getCachedToken($tokenId)
+    protected function getCachedToken($tokenId, $duration = null, $dependency = null)
     {
         try {
             $token = AccessToken::getDb()
@@ -145,11 +157,14 @@ abstract class AccessTokenRepository implements AccessTokenRepositoryInterface
                             ->identifier($tokenId)
                             ->active()->one();
                     },
-                    null,
-                    new TagDependency(['tags' => static::class])
+                    $duration,
+                    $dependency instanceof Dependency
+                        ? $dependency
+                        : new TagDependency(['tags' => static::class])
                 );
         } catch (\Throwable $exception) {
             $token = null;
+            \Yii::error($exception->getMessage());
         }
 
         return $token;

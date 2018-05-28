@@ -59,6 +59,16 @@ return [
             'class' => \chervand\yii2\oauth2\server\Module::class,
             'privateKey' => __DIR__ . '/../private.key',
             'publicKey' => __DIR__ . '/../public.key',
+            'cache' => [
+                \League\OAuth2\Server\Repositories\AccessTokenRepositoryInterface::class => [
+                    'cacheDuration' => 3600,
+                    'cacheDependency' => new \yii\caching\FileDependency(['fileName' => 'example.txt']),
+                ],
+                \League\OAuth2\Server\Repositories\RefreshTokenRepositoryInterface::class => [
+                    'cacheDuration' => 3600,
+                    'cacheDependency' => new \yii\caching\FileDependency(['fileName' => 'example.txt']),
+                ],
+            ],
             'enableGrantTypes' => function (\chervand\yii2\oauth2\server\Module &$module) {
                 $server = $module->authorizationServer;
                 $server->enableGrantType(new \League\OAuth2\Server\Grant\ImplicitGrant(
@@ -108,11 +118,13 @@ class ActiveController extends \yii\rest\ActiveController
             'authMethods' => [
                 [
                     'class' => \chervand\yii2\oauth2\server\components\AuthMethods\HttpMacAuth::class,
-                    'publicKey' => $auth->publicKey
+                    'publicKey' => $auth->publicKey,
+                    'cache' => $auth->cache,
                 ],
                 [
                     'class' => \chervand\yii2\oauth2\server\components\AuthMethods\HttpBearerAuth::class,
-                    'publicKey' => $auth->publicKey
+                    'publicKey' => $auth->publicKey,
+                    'cache' => $auth->cache,
                 ],
             ]
         ];

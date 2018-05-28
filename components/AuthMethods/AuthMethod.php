@@ -1,12 +1,15 @@
 <?php
+
 namespace chervand\yii2\oauth2\server\components\AuthMethods;
 
 use chervand\yii2\oauth2\server\components\Exception\OAuthHttpException;
 use chervand\yii2\oauth2\server\components\Psr7\ServerRequest;
+use chervand\yii2\oauth2\server\components\Repositories\RepositoryCacheInterface;
 use chervand\yii2\oauth2\server\components\Server\ResourceServer;
 use League\OAuth2\Server\CryptKey;
 use League\OAuth2\Server\Exception\OAuthServerException;
 use League\OAuth2\Server\Repositories\AccessTokenRepositoryInterface;
+use yii\helpers\ArrayHelper;
 use yii\rbac\BaseManager;
 use yii\web\HttpException;
 use yii\web\Request;
@@ -22,6 +25,12 @@ abstract class AuthMethod extends \yii\filters\auth\AuthMethod
     public $setAuthManagerDefaultRoles = true;
 
     /**
+     * @var array
+     */
+    public $cache;
+
+
+    /**
      * @param User $user
      * @param Request $request
      * @param Response $response
@@ -35,9 +44,17 @@ abstract class AuthMethod extends \yii\filters\auth\AuthMethod
             return null;
         }
 
+        $accessTokenRepository = $this->getAccessTokenRepository();
+
+        if ($accessTokenRepository instanceof RepositoryCacheInterface) {
+            $accessTokenRepository->setCache(
+                ArrayHelper::getValue($this->cache, AccessTokenRepositoryInterface::class)
+            );
+        }
+
         return $this->validate(
             new ResourceServer(
-                $this->getAccessTokenRepository(),
+                $accessTokenRepository,
                 $this->publicKey,
                 $this->getAuthorizationValidator()
             ),
