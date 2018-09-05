@@ -174,7 +174,7 @@ class AccessToken extends ActiveRecord implements AccessTokenEntityInterface, Ra
      */
     public function getRateLimit($request, $action)
     {
-        return [100, 600];
+        return [1000, 600];
     }
 
     /**
@@ -183,7 +183,7 @@ class AccessToken extends ActiveRecord implements AccessTokenEntityInterface, Ra
     public function loadAllowance($request, $action)
     {
         return [
-            $this->allowance === null ? 100 : $this->allowance,
+            $this->allowance === null ? 1000 : $this->allowance,
             $this->allowance_updated_at
         ];
     }
