@@ -1,4 +1,8 @@
 <?php
+/**
+ *
+ */
+
 namespace chervand\yii2\oauth2\server\models;
 
 use chervand\yii2\oauth2\server\components\ResponseTypes\BearerTokenResponse;
@@ -63,6 +67,51 @@ class Client extends ActiveRecord implements ClientEntityInterface
     public static function find()
     {
         return new ClientQuery(get_called_class());
+    }
+
+    /**
+     * @param string $clientIdentifier
+     * @param int|string $grantType
+     * @param null $clientSecret
+     * @param bool $mustValidateSecret
+     * @return static|null
+     */
+    public static function findEntity(
+        $clientIdentifier,
+        $grantType,
+        $clientSecret = null,
+        $mustValidateSecret = true
+    )
+    {
+        try {
+
+            $clientEntity = static::getDb()->cache(
+                function () use ($clientIdentifier, $grantType) {
+                    return static::find()
+                        ->active()
+                        ->identifier($clientIdentifier)
+                        ->grant($grantType)
+                        ->one();
+                }
+            );
+
+            if (
+                $clientEntity instanceof static
+                && (
+                    $clientEntity->getIsConfidential() !== true
+                    || $mustValidateSecret !== true
+                    || static::secretVerify($clientSecret, $clientEntity->secret) === true
+                )
+            ) {
+
+                return $clientEntity;
+            }
+
+        } catch (\Throwable $exception) {
+
+        }
+
+        return null;
     }
 
     public static function grants()

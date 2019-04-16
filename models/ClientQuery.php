@@ -1,8 +1,16 @@
 <?php
+/**
+ *
+ */
+
 namespace chervand\yii2\oauth2\server\models;
 
 use yii\db\ActiveQuery;
 
+/**
+ * Class ClientQuery
+ * @package chervand\yii2\oauth2\server\models
+ */
 class ClientQuery extends ActiveQuery
 {
     use EntityQueryTrait;
@@ -19,11 +27,15 @@ class ClientQuery extends ActiveQuery
     }
 
     /**
-     * @param $grantType
+     * @param int|string $grantType
      * @return ClientQuery|ActiveQuery
      */
     public function grant($grantType)
     {
+        if ($grantType === null) {
+            return $this;
+        }
+
         if (!is_numeric($grantType)) {
             $grantType = Client::getGrantTypeId($grantType, -999);
         }
