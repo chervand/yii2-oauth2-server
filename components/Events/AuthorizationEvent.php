@@ -4,9 +4,9 @@ namespace chervand\yii2\oauth2\server\components\Events;
 
 use Lcobucci\JWT\Parser;
 use Lcobucci\JWT\Token;
+use League\Event\Event;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use yii\base\Event;
 use yii\helpers\Json;
 
 class AuthorizationEvent extends Event
@@ -28,6 +28,13 @@ class AuthorizationEvent extends Event
      */
     private $_token;
 
+
+    public function __construct($name, ServerRequestInterface $request, ResponseInterface $response)
+    {
+        parent::__construct($name);
+        $this->request = $request;
+        $this->response = $response;
+    }
 
     /**
      * @return Token

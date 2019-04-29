@@ -9,7 +9,6 @@ use League\OAuth2\Server\Exception\OAuthServerException;
 use League\OAuth2\Server\ResponseTypes\ResponseTypeInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use yii\base\Event;
 
 class AuthorizationServer extends \League\OAuth2\Server\AuthorizationServer
 {
@@ -24,13 +23,12 @@ class AuthorizationServer extends \League\OAuth2\Server\AuthorizationServer
         $response = parent::respondToAccessTokenRequest($request, $response);
 
         if ($response instanceof ResponseInterface) {
-            Event::trigger(
-                $this,
-                AuthorizationEvent::USER_AUTHENTICATION_SUCCEED,
-                new AuthorizationEvent([
-                    'request' => $request,
-                    'response' => $response,
-                ])
+            $this->getEmitter()->emit(
+                new AuthorizationEvent(
+                    AuthorizationEvent::USER_AUTHENTICATION_SUCCEED,
+                    $request,
+                    $response
+                )
             );
         }
 
