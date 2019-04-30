@@ -20,8 +20,14 @@ use League\OAuth2\Server\CryptKey;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Exception\OAuthServerException;
 use League\OAuth2\Server\Repositories\AccessTokenRepositoryInterface;
+use League\OAuth2\Server\Repositories\ClientRepositoryInterface;
 use League\OAuth2\Server\Repositories\RefreshTokenRepositoryInterface;
+use League\OAuth2\Server\Repositories\ScopeRepositoryInterface;
+use League\OAuth2\Server\Repositories\UserRepositoryInterface;
+use League\OAuth2\Server\ResponseTypes\ResponseTypeInterface;
+use yii\base\Application;
 use yii\base\BootstrapInterface;
+use yii\base\InvalidConfigException;
 use yii\filters\Cors;
 use yii\helpers\ArrayHelper;
 use yii\rest\UrlRule;
@@ -32,12 +38,12 @@ use yii\web\GroupUrlRule;
  * @package chervand\yii2\oauth2\server
  *
  * @property-read AuthorizationServer $authorizationServer
- * @property-read \League\OAuth2\Server\Repositories\AccessTokenRepositoryInterface $accessTokenRepository
- * @property \League\OAuth2\Server\Repositories\ClientRepositoryInterface $clientRepository
- * @property \League\OAuth2\Server\Repositories\RefreshTokenRepositoryInterface $refreshTokenRepository
- * @property \League\OAuth2\Server\Repositories\ScopeRepositoryInterface $scopeRepository
- * @property \League\OAuth2\Server\Repositories\UserRepositoryInterface $userRepository
- * @property \League\OAuth2\Server\ResponseTypes\ResponseTypeInterface $responseType
+ * @property-read AccessTokenRepositoryInterface $accessTokenRepository
+ * @property ClientRepositoryInterface $clientRepository
+ * @property RefreshTokenRepositoryInterface $refreshTokenRepository
+ * @property ScopeRepositoryInterface $scopeRepository
+ * @property UserRepositoryInterface $userRepository
+ * @property ResponseTypeInterface $responseType
  *
  * @todo: ability to define access token type for refresh token grant, client-refresh grant type connection review
  */
@@ -113,14 +119,14 @@ class Module extends \yii\base\Module implements BootstrapInterface
      */
     private $_clientEntity;
     /**
-     * @var \League\OAuth2\Server\ResponseTypes\ResponseTypeInterface
+     * @var ResponseTypeInterface
      */
     private $_responseType;
 
 
     /**
      * Sets module's URL manager rules on application's bootstrap.
-     * @param \yii\base\Application $app
+     * @param Application $app
      */
     public function bootstrap($app)
     {
@@ -175,6 +181,7 @@ class Module extends \yii\base\Module implements BootstrapInterface
 
     /**
      * @return AuthorizationServer
+     * @throws OAuthServerException
      */
     public function getAuthorizationServer()
     {
@@ -186,7 +193,7 @@ class Module extends \yii\base\Module implements BootstrapInterface
     }
 
     /**
-     *
+     * @throws OAuthServerException
      */
     protected function prepareAuthorizationServer()
     {
@@ -212,7 +219,7 @@ class Module extends \yii\base\Module implements BootstrapInterface
 
     /**
      * @return BearerTokenRepository|MacTokenRepository|AccessTokenRepositoryInterface
-     * @throws \yii\base\InvalidConfigException
+     * @throws InvalidConfigException
      */
     public function getAccessTokenRepository()
     {
@@ -231,7 +238,7 @@ class Module extends \yii\base\Module implements BootstrapInterface
 
     /**
      * @return BearerTokenRepository|MacTokenRepository
-     * @throws \yii\base\InvalidConfigException
+     * @throws InvalidConfigException
      */
     protected function prepareAccessTokenRepository()
     {
