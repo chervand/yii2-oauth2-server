@@ -113,6 +113,9 @@ class AccessToken extends ActiveRecord implements AccessTokenEntityInterface, Ra
             ->viaTable('{{auth__access_token_scope}}', ['access_token_id' => 'id']);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function convertToJWT(CryptKey $privateKey)
     {
         $builder = (new Builder())
@@ -131,9 +134,23 @@ class AccessToken extends ActiveRecord implements AccessTokenEntityInterface, Ra
                 ->set('mac_key', $this->mac_key);
         }
 
+        $builder = $this->finalizeJWTBuilder($builder);
+
         return $builder
             ->sign(new Sha256(), new Key($privateKey->getKeyPath(), $privateKey->getPassPhrase()))
             ->getToken();
+    }
+
+    /**
+     * Override it in order to set additional public or private claims.
+     *
+     * @param Builder $builder
+     * @return Builder
+     * @see https://tools.ietf.org/html/rfc7519#section-4
+     */
+    protected function finalizeJWTBuilder(Builder $builder)
+    {
+        return $builder;
     }
 
     /**

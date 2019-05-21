@@ -1,4 +1,7 @@
 <?php
+/**
+ *
+ */
 
 namespace chervand\yii2\oauth2\server\components\Repositories;
 
@@ -14,10 +17,20 @@ use League\OAuth2\Server\Repositories\AccessTokenRepositoryInterface;
 use yii\base\InvalidConfigException;
 use yii\caching\Dependency;
 use yii\caching\TagDependency;
+use yii\helpers\ArrayHelper;
 
+/**
+ * Class AccessTokenRepository
+ * @package chervand\yii2\oauth2\server\components\Repositories
+ */
 abstract class AccessTokenRepository implements AccessTokenRepositoryInterface, RepositoryCacheInterface
 {
     use CryptTrait, RepositoryCacheTrait;
+
+    /**
+     * @var string
+     */
+    private $_tokenEntityClass;
 
     /**
      * @var int
@@ -37,6 +50,21 @@ abstract class AccessTokenRepository implements AccessTokenRepositoryInterface, 
             throw new InvalidConfigException('Unknown token type.');
         }
 
+        $this->_tokenEntityClass = ArrayHelper::getValue(
+            \Yii::$app, 'user.identityClass',
+            AccessToken::class
+        );
+
+        if (
+            class_exists($this->_tokenEntityClass) !== true
+            || in_array(
+                AccessTokenEntityInterface::class,
+                class_implements($this->_tokenEntityClass)
+            ) !== true
+        ) {
+            $this->_tokenEntityClass = AccessToken::class;
+        }
+
         $this->_tokenTypeId = $tokenTypeId;
         $this->setEncryptionKey($encryptionKey);
     }
@@ -52,15 +80,18 @@ abstract class AccessTokenRepository implements AccessTokenRepositoryInterface, 
      */
     public function getNewToken(ClientEntityInterface $clientEntity, array $scopes, $userIdentifier = null)
     {
-        $token = new AccessToken();
-        $token->client_id = $clientEntity->id;
-        $token->type = $clientEntity->token_type;
+        $token = new $this->_tokenEntityClass();
 
-        if (!$token->validate()) {
-            throw OAuthServerException::serverError('Token creation failed');
+        if ($token instanceof AccessToken) {
+            $token->client_id = $clientEntity->id;
+            $token->type = $clientEntity->token_type;
         }
 
-        return $token;
+        if ($token->validate() === true) {
+            return $token;
+        }
+
+        throw OAuthServerException::serverError('Token creation failed');
     }
 
     /**
