@@ -25,6 +25,7 @@ use League\OAuth2\Server\Repositories\RefreshTokenRepositoryInterface;
 use League\OAuth2\Server\Repositories\ScopeRepositoryInterface;
 use League\OAuth2\Server\Repositories\UserRepositoryInterface;
 use League\OAuth2\Server\ResponseTypes\ResponseTypeInterface;
+use Yii;
 use yii\base\Application;
 use yii\base\BootstrapInterface;
 use yii\base\InvalidConfigException;
@@ -145,31 +146,32 @@ class Module extends \yii\base\Module implements BootstrapInterface
             ]))->rules, false);
     }
 
+    public function __construct($id, $parent = null, $config = [])
+    {
+        parent::__construct($id, $parent, ArrayHelper::merge([
+            'components' => [
+                'userRepository' => [
+                    'class' => Yii::$app->user->identityClass,
+                ],
+                'clientRepository' => [
+                    'class' => ClientRepository::class,
+                ],
+                'scopeRepository' => [
+                    'class' => ScopeRepository::class,
+                ],
+                'refreshTokenRepository' => [
+                    'class' => RefreshTokenRepository::class,
+                ],
+            ],
+        ], $config));
+    }
+
     /**
      * {@inheritdoc}
      */
     public function init()
     {
         parent::init();
-
-        \Yii::configure($this, [
-            'components' => ArrayHelper::merge([
-                'clientRepository' => ClientRepository::class,
-                'scopeRepository' => ScopeRepository::class,
-                'userRepository' => \Yii::$app->user->identityClass,
-                'refreshTokenRepository' => [
-                    'class' => RefreshTokenRepository::class,
-                    'cacheDuration' => ArrayHelper::getValue(
-                        $this->cache,
-                        RefreshTokenRepositoryInterface::class . '.cacheDuration'
-                    ),
-                    'cacheDependency' => ArrayHelper::getValue(
-                        $this->cache,
-                        RefreshTokenRepositoryInterface::class . '.cacheDependency'
-                    ),
-                ],
-            ], $this->components)
-        ]);
 
         if (!$this->privateKey instanceof CryptKey) {
             $this->privateKey = new CryptKey($this->privateKey);
@@ -256,7 +258,7 @@ class Module extends \yii\base\Module implements BootstrapInterface
     protected function getClientEntity()
     {
         if (!$this->_clientEntity instanceof ClientEntityInterface) {
-            $request = \Yii::$app->request;
+            $request = Yii::$app->request;
             $this->_clientEntity = $this->clientRepository
                 ->getClientEntity(
                     $request->getAuthUser(),
@@ -286,7 +288,7 @@ class Module extends \yii\base\Module implements BootstrapInterface
     public function getServerRequest()
     {
         if (!$this->_serverRequest instanceof ServerRequest) {
-            $request = \Yii::$app->request;
+            $request = Yii::$app->request;
             $this->_serverRequest = (new ServerRequest($request))
                 ->withParsedBody($request->bodyParams);
         }
