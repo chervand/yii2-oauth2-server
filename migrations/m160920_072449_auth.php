@@ -36,7 +36,7 @@ class m160920_072449_auth extends Migration
                 'KEY (status)',
             ],
             '{{%auth__access_token}}' => [
-                'id' => Schema::TYPE_PK,
+                'id' => Schema::TYPE_UBIGPK,
                 'client_id' => Schema::TYPE_INTEGER . ' NOT NULL',
                 'user_id' => Schema::TYPE_INTEGER,
                 'identifier' => Schema::TYPE_STRING . ' NOT NULL',
@@ -73,15 +73,15 @@ class m160920_072449_auth extends Migration
                 'KEY (is_default)',
             ],
             '{{%auth__access_token_scope}}' => [
-                'access_token_id' => Schema::TYPE_INTEGER . ' NOT NULL',
+                'access_token_id' => Schema::TYPE_BIGINT . ' UNSIGNED NOT NULL',
                 'scope_id' => Schema::TYPE_INTEGER . ' NOT NULL',
                 'PRIMARY KEY (access_token_id, scope_id)',
                 'FOREIGN KEY (access_token_id) REFERENCES {{%auth__access_token}} (id) ON DELETE CASCADE ON UPDATE CASCADE',
                 'FOREIGN KEY (scope_id) REFERENCES {{%auth__scope}} (id) ON DELETE CASCADE ON UPDATE CASCADE',
             ],
             '{{%auth__refresh_token}}' => [
-                'id' => Schema::TYPE_PK,
-                'access_token_id' => Schema::TYPE_INTEGER . ' NOT NULL',
+                'id' => Schema::TYPE_UBIGPK,
+                'access_token_id' => Schema::TYPE_BIGINT . ' UNSIGNED NOT NULL',
                 'identifier' => Schema::TYPE_STRING . ' NOT NULL',
                 'created_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
                 'updated_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
