@@ -41,7 +41,7 @@ class m160920_072449_auth extends Migration
                 'user_id' => Schema::TYPE_INTEGER,
                 'identifier' => Schema::TYPE_STRING . ' NOT NULL',
                 'type' => Schema::TYPE_SMALLINT . ' NOT NULL DEFAULT 1', // Bearer
-                'mac_key' => Schema::TYPE_STRING,
+                'mac_key' => 'varchar(500)',
                 'mac_algorithm' => Schema::TYPE_SMALLINT,
                 'allowance' => Schema::TYPE_SMALLINT,
                 'allowance_updated_at' => Schema::TYPE_INTEGER . ' UNSIGNED NOT NULL',
