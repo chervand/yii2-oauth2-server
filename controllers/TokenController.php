@@ -35,6 +35,7 @@ class TokenController extends ActiveController
     /**
      * @return mixed
      * @throws HttpException
+     * @throws BadRequestHttpException
      * @throws OAuthHttpException
      */
     public function actionCreate()
