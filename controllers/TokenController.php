@@ -9,6 +9,7 @@ use League\OAuth2\Server\Exception\OAuthServerException;
 use yii\helpers\Json;
 use yii\rest\ActiveController;
 use yii\rest\OptionsAction;
+use yii\web\BadRequestHttpException;
 use yii\web\HttpException;
 
 class TokenController extends ActiveController
@@ -34,6 +35,7 @@ class TokenController extends ActiveController
     /**
      * @return mixed
      * @throws HttpException
+     * @throws BadRequestHttpException
      * @throws OAuthHttpException
      */
     public function actionCreate()
@@ -54,6 +56,10 @@ class TokenController extends ActiveController
         } catch (OAuthServerException $exception) {
 
             throw new OAuthHttpException($exception);
+
+        } catch (BadRequestHttpException $exception) {
+
+            throw $exception;
 
         } catch (\Exception $exception) {
 
